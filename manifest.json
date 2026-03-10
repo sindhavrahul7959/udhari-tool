@@ -2,21 +2,24 @@
   "name": "ઉધાર વસૂલી - જય ખોડીયાર",
   "short_name": "ઉધાર વસૂલી",
   "description": "Jay Khodiyar Showroom Udhar Collection Tool",
-  "start_url": "./udhar-vasuli-tool.html",
+  "start_url": "/udhari-tool/",
+  "scope": "/udhari-tool/",
   "display": "standalone",
   "background_color": "#0a0c10",
   "theme_color": "#f5a623",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "icon.png",
+      "src": "/udhari-tool/icon.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "icon.png",
+      "src": "/udhari-tool/icon.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
