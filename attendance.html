@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#00d4aa">
+<title>👥 Attendance - જય ખોડીયાર</title>
+<style>
+:root{--bg:#080b12;--s1:#0f1520;--s2:#161e2e;--s3:#1e293b;--border:#1e3a5f;--accent:#00d4aa;--red:#ff4757;--yellow:#ffd32a;--blue:#1a8cff;--text:#e2e8f5;--muted:#4a6080;--radius:14px}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;min-height:100vh}
+
+/* LOADER */
+.loader{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:14px}
+.spinner{width:42px;height:42px;border:3px solid var(--s3);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader.hide{display:none}
+
+/* HEADER */
+.header{position:sticky;top:0;z-index:100;background:var(--s1);border-bottom:1px solid var(--border);padding:12px 16px 10px}
+.header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.header h1{font-size:16px;font-weight:800;color:var(--accent)}
+.header h1 small{color:var(--muted);font-size:10px;font-weight:400;display:block;margin-top:1px}
+.hright{display:flex;align-items:center;gap:8px}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.sync-dot.off{background:var(--red)}
+.sync-dot.sync{background:var(--yellow);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* DATE NAV */
+.date-nav{display:flex;align-items:center;gap:8px}
+.dnbtn{background:var(--s3);border:1px solid var(--border);color:var(--text);width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.date-lbl{flex:1;text-align:center;font-size:12px;font-weight:700;color:var(--text)}
+.today-btn{background:transparent;border:1px solid var(--accent);color:var(--accent);padding:5px 12px;border-radius:20px;font-size:10px;cursor:pointer;font-weight:700}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:10px 12px}
+.scard{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:10px 6px;text-align:center}
+.sval{font-size:20px;font-weight:800}
+.sval.green{color:var(--accent)}
+.sval.red{color:var(--red)}
+.sval.yellow{color:var(--yellow)}
+.sval.blue{color:var(--blue)}
+.slbl{font-size:9px;color:var(--muted);margin-top:2px;text-transform:uppercase}
+
+/* STAFF CARDS */
+.list{padding:8px 10px 120px}
+.scard-wrap{background:var(--s1);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;overflow:hidden;transition:border-color .2s}
+.scard-wrap.present{border-left:3px solid var(--accent)}
+.scard-wrap.absent{border-left:3px solid var(--red)}
+.scard-wrap.half{border-left:3px solid var(--yellow)}
+.scard-wrap.late{border-left:3px solid var(--blue)}
+
+.scard-top{padding:12px 14px;display:flex;align-items:center;gap:12px}
+.avatar{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;flex-shrink:0;color:#000}
+.staff-info{flex:1;min-width:0}
+.staff-name{font-weight:700;font-size:14px;color:#fff}
+.staff-role{font-size:10px;color:var(--muted);margin-top:1px}
+.status-badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+.sb-present{background:rgba(0,212,170,.15);color:var(--accent);border:1px solid rgba(0,212,170,.3)}
+.sb-absent{background:rgba(255,71,87,.15);color:var(--red);border:1px solid rgba(255,71,87,.3)}
+.sb-half{background:rgba(255,211,42,.15);color:var(--yellow);border:1px solid rgba(255,211,42,.3)}
+.sb-late{background:rgba(26,140,255,.15);color:var(--blue);border:1px solid rgba(26,140,255,.3)}
+.sb-none{background:var(--s3);color:var(--muted);border:1px solid var(--border)}
+
+/* TIME INFO */
+.time-row{padding:0 14px 10px;display:flex;gap:8px}
+.time-chip{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;flex:1;text-align:center}
+.time-chip label{display:block;font-size:9px;color:var(--muted);text-transform:uppercase;margin-bottom:2px}
+.time-chip span{font-size:13px;font-weight:700;color:var(--text)}
+
+/* ACTION BUTTONS */
+.action-row{border-top:1px solid var(--border);display:flex}
+.act{flex:1;padding:11px 4px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;position:relative;transition:background .15s}
+.act:not(:last-child)::after{content:'';position:absolute;right:0;top:20%;height:60%;width:1px;background:var(--border)}
+.act:active{background:var(--s3)}
+.act-in{color:var(--accent)}
+.act-out{color:var(--red)}
+.act-half{color:var(--yellow)}
+.act-absent{color:var(--muted)}
+.act-edit{color:var(--blue)}
+
+/* BOTTOM TABS */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--s1);border-top:1px solid var(--border);display:flex;padding:6px 0 env(safe-area-inset-bottom,6px);z-index:50}
+.bnav{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px}
+.bnav span{font-size:20px}
+.bnav p{font-size:9px;color:var(--muted)}
+.bnav.active p{color:var(--accent)}
+
+/* VIEWS */
+.view{display:none;padding-bottom:80px}
+.view.active{display:block}
+
+/* MONTHLY VIEW */
+.month-wrap{padding:10px 12px 100px}
+.month-card{background:var(--s1);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden}
+.month-head{padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer}
+.month-avatar{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex-shrink:0;color:#000}
+.month-name{font-weight:700;font-size:13px;flex:1}
+.month-stats{display:flex;gap:6px}
+.ms{padding:3px 8px;border-radius:20px;font-size:10px;font-weight:700}
+.ms-p{background:rgba(0,212,170,.15);color:var(--accent)}
+.ms-a{background:rgba(255,71,87,.15);color:var(--red)}
+.month-detail{display:none;border-top:1px solid var(--border);padding:10px 14px}
+.month-row{display:flex;justify-content:space-between;padding:5px 0;font-size:12px;border-bottom:1px solid var(--s3)}
+.month-row:last-child{border:none;font-weight:700;padding-top:8px}
+
+/* ADD STAFF OVERLAY */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;align-items:flex-end;justify-content:center}
+.overlay.show{display:flex}
+.sheet{background:var(--s1);border-radius:20px 20px 0 0;width:100%;max-height:85vh;overflow-y:auto;border-top:1px solid var(--border);padding-bottom:20px}
+.sheet-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:10px auto 0}
+.sheet-head{padding:14px 18px;border-bottom:1px solid var(--border)}
+.sheet-head h3{font-size:15px;font-weight:700;color:var(--accent)}
+.fg{padding:0 16px 12px}
+.fg label{display:block;font-size:10px;color:var(--muted);margin-bottom:5px;text-transform:uppercase}
+.fg input,.fg select{width:100%;padding:11px 13px;background:var(--s2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;outline:none}
+.fg input:focus{border-color:var(--accent)}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 12px}
+.fg2 label{display:block;font-size:10px;color:var(--muted);margin-bottom:5px;text-transform:uppercase}
+.fg2 input,.fg2 select{width:100%;padding:11px 13px;background:var(--s2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;outline:none}
+.sheet-btns{padding:10px 16px 0;display:flex;gap:8px}
+.sbtn{flex:1;padding:13px;border-radius:11px;border:none;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px}
+.sbtn-ok{background:var(--accent);color:#000}
+.sbtn-cancel{background:var(--s3);color:var(--muted)}
+
+/* MANAGE STAFF VIEW */
+.manage-wrap{padding:10px 12px 100px}
+.manage-card{background:var(--s1);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;padding:12px 14px;display:flex;align-items:center;gap:12px}
+.manage-info{flex:1}
+.manage-name{font-weight:700;font-size:13px}
+.manage-role{font-size:10px;color:var(--muted)}
+.del-btn{background:transparent;border:1px solid var(--red);color:var(--red);padding:6px 12px;border-radius:8px;font-size:11px;cursor:pointer}
+.add-staff-btn{position:fixed;bottom:80px;right:16px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#00b894,var(--accent));border:none;color:#000;font-size:24px;cursor:pointer;box-shadow:0 4px 20px rgba(0,212,170,.4);z-index:50;display:flex;align-items:center;justify-content:center}
+
+/* TOAST */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--accent);color:#000;padding:9px 18px;border-radius:30px;font-size:12px;font-weight:700;z-index:999;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* COLORS FOR AVATARS */
+.av0{background:#00d4aa}.av1{background:#ff6b81}.av2{background:#ffd32a}.av3{background:#1a8cff}
+.av4{background:#a29bfe}.av5{background:#fd79a8}.av6{background:#55efc4}.av7{background:#fdcb6e}
+.av8{background:#e17055}.av9{background:#74b9ff}
+
+.empty{text-align:center;padding:50px 20px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div class="loader" id="loader">
+  <div class="spinner"></div>
+  <p>Firebase connect થઈ રહ્યું છે...</p>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <h1>👥 Attendance <small>જય ખોડીયાર શો રૂમ - ઢસા</small></h1>
+    <div class="hright">
+      <div class="sync-dot" id="syncDot"></div>
+      <button onclick="openAddStaff()" style="background:var(--s3);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:20px;font-size:11px;cursor:pointer">+ Staff</button>
+    </div>
+  </div>
+  <div class="date-nav">
+    <button class="dnbtn" onclick="changeDay(-1)">‹</button>
+    <div class="date-lbl" id="dateLbl"></div>
+    <button class="dnbtn" onclick="changeDay(1)">›</button>
+    <button class="today-btn" onclick="goToday()">આજ</button>
+  </div>
+</div>
+
+<!-- VIEW 0: TODAY ATTENDANCE -->
+<div id="view0" class="view active">
+  <div class="stats" id="statsRow"></div>
+  <div class="list" id="staffList"></div>
+</div>
+
+<!-- VIEW 1: MONTHLY REPORT -->
+<div id="view1" class="view">
+  <div style="padding:12px 16px 6px;font-size:13px;font-weight:700;color:var(--accent)">📅 Monthly Report</div>
+  <div class="month-wrap" id="monthWrap"></div>
+</div>
+
+<!-- VIEW 2: MANAGE STAFF -->
+<div id="view2" class="view">
+  <div style="padding:12px 16px 6px;font-size:13px;font-weight:700;color:var(--accent)">⚙️ Staff Management</div>
+  <div class="manage-wrap" id="manageWrap"></div>
+  <button class="add-staff-btn" onclick="openAddStaff()">+</button>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <div class="bnav active" id="nav0" onclick="switchView(0)"><span>📋</span><p>આજ</p></div>
+  <div class="bnav" id="nav1" onclick="switchView(1)"><span>📅</span><p>Monthly</p></div>
+  <div class="bnav" id="nav2" onclick="switchView(2)"><span>⚙️</span><p>Staff</p></div>
+</div>
+
+<!-- ADD STAFF OVERLAY -->
+<div class="overlay" id="addOvr" onclick="closeAdd(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head"><h3>➕ નવો Staff ઉમેરો</h3></div>
+    <div style="height:12px"></div>
+    <div class="fg"><label>નામ *</label><input id="sName" placeholder="Staff નામ..."></div>
+    <div class="fg2">
+      <div><label>Role</label>
+        <select id="sRole">
+          <option>Salesman</option>
+          <option>Technician</option>
+          <option>Helper</option>
+          <option>Accountant</option>
+          <option>Manager</option>
+          <option>Owner</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div><label>રોજ પગાર ₹</label><input id="sSalary" type="number" placeholder="0"></div>
+    </div>
+    <div class="fg"><label>Mobile</label><input id="sMob" type="tel" placeholder="9876543210"></div>
+    <div class="sheet-btns">
+      <button class="sbtn sbtn-cancel" onclick="closeAdd()">✕</button>
+      <button class="sbtn sbtn-ok" onclick="addStaff()">✅ Save</button>
+    </div>
+    <div style="height:16px"></div>
+  </div>
+</div>
+
+<!-- TIME EDIT OVERLAY -->
+<div class="overlay" id="timeOvr" onclick="closeTime(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head"><h3 id="timeStaffName">⏰ Time Edit</h3><p id="timeStaffSub"></p></div>
+    <div style="height:12px"></div>
+    <div class="fg2">
+      <div><label>Time In</label><input type="time" id="tIn"></div>
+      <div><label>Time Out</label><input type="time" id="tOut"></div>
+    </div>
+    <div class="fg">
+      <label>Status</label>
+      <select id="tStatus">
+        <option value="present">✅ Present</option>
+        <option value="late">🕐 Late</option>
+        <option value="half">🌓 Half Day</option>
+        <option value="absent">❌ Absent</option>
+      </select>
+    </div>
+    <div class="fg"><label>નોંધ</label><input id="tNote" placeholder="Optional..."></div>
+    <div class="sheet-btns">
+      <button class="sbtn sbtn-cancel" onclick="closeTime()">✕</button>
+      <button class="sbtn sbtn-ok" onclick="saveTime()">✅ Save</button>
+    </div>
+    <div style="height:16px"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue, set, push, update, remove }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBAK95s01LTGQ0R_H08pVdP4-NRXWLrwpc",
+  authDomain: "jay-khodiyar-8ad32.firebaseapp.com",
+  databaseURL: "https://jay-khodiyar-8ad32-default-rtdb.firebaseio.com",
+  projectId: "jay-khodiyar-8ad32",
+  storageBucket: "jay-khodiyar-8ad32.firebasestorage.app",
+  messagingSenderId: "621441145597",
+  appId: "1:621441145597:web:26b65a9d7984dae970fc94"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// ====== STATE ======
+let staffList = {};
+let attendance = {};
+let curDate = todayStr();
+let curStaffId = null;
+
+// ====== HELPERS ======
+function todayStr(){const d=new Date();return d.toISOString().slice(0,10);}
+function fmtDate(s){const d=new Date(s+'T00:00:00');return d.toLocaleDateString('gu-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}
+function nowTime(){return new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:false});}
+function avClass(name){const i=name.charCodeAt(0)%10;return 'av'+i;}
+function initials(name){return name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();}
+
+// ====== SYNC STATUS ======
+function setSS(s){const d=document.getElementById('syncDot');d.className='sync-dot'+(s==='sync'?' sync':s==='off'?' off':'');}
+
+// ====== FIREBASE LISTENERS ======
+setSS('sync');
+
+// Staff listener
+onValue(ref(db,'staff'), snap=>{
+  staffList = snap.val()||{};
+  renderAll();
+  document.getElementById('loader').classList.add('hide');
+  setSS('on');
+});
+
+// Attendance listener
+onValue(ref(db,'attendance'), snap=>{
+  attendance = snap.val()||{};
+  renderAll();
+});
+
+// ====== RENDER TODAY ======
+function getAtt(staffId, date){
+  return attendance[date]?.[staffId] || null;
+}
+
+function renderStats(){
+  const ids = Object.keys(staffList);
+  let p=0,a=0,h=0,l=0;
+  ids.forEach(id=>{
+    const att = getAtt(id, curDate);
+    if(!att) a++;
+    else if(att.status==='present') p++;
+    else if(att.status==='absent') a++;
+    else if(att.status==='half') h++;
+    else if(att.status==='late') l++;
+    else a++;
+  });
+  document.getElementById('statsRow').innerHTML=`
+    <div class="scard"><div class="sval green">${p}</div><div class="slbl">✅ Present</div></div>
+    <div class="scard"><div class="sval red">${a}</div><div class="slbl">❌ Absent</div></div>
+    <div class="scard"><div class="sval yellow">${h}</div><div class="slbl">🌓 Half</div></div>
+    <div class="scard"><div class="sval blue">${l}</div><div class="slbl">🕐 Late</div></div>`;
+}
+
+function renderStaffList(){
+  const ids = Object.keys(staffList);
+  const el = document.getElementById('staffList');
+  if(!ids.length){
+    el.innerHTML='<div class="empty"><div style="font-size:48px">👥</div><p>Staff ઉમેરો<br>ઉપર "+ Staff" button tap કરો</p></div>';
+    return;
+  }
+  el.innerHTML = ids.map((id,i)=>{
+    const s = staffList[id];
+    const att = getAtt(id, curDate);
+    const status = att?.status || null;
+    const cls = status?status:'';
+    const badgeMap = {
+      present:'<span class="status-badge sb-present">✅ Present</span>',
+      absent:'<span class="status-badge sb-absent">❌ Absent</span>',
+      half:'<span class="status-badge sb-half">🌓 Half Day</span>',
+      late:'<span class="status-badge sb-late">🕐 Late</span>',
+    };
+    const badge = status?badgeMap[status]:'<span class="status-badge sb-none">— Pending</span>';
+    const timeIn = att?.timeIn||'--:--';
+    const timeOut = att?.timeOut||'--:--';
+    const hours = att?.timeIn&&att?.timeOut ? calcHours(att.timeIn, att.timeOut) : '--';
+
+    return`<div class="scard-wrap ${cls}" id="sw-${id}">
+      <div class="scard-top">
+        <div class="avatar ${avClass(s.name)}">${initials(s.name)}</div>
+        <div class="staff-info">
+          <div class="staff-name">${s.name}</div>
+          <div class="staff-role">${s.role||'Staff'}${s.salary?' · ₹'+s.salary+'/day':''}</div>
+        </div>
+        ${badge}
+      </div>
+      <div class="time-row">
+        <div class="time-chip"><label>Time In</label><span>${timeIn}</span></div>
+        <div class="time-chip"><label>Time Out</label><span>${timeOut}</span></div>
+        <div class="time-chip"><label>કલાક</label><span>${hours}</span></div>
+      </div>
+      <div class="action-row">
+        <button class="act act-in" onclick="window.markIn('${id}')">⬆ In</button>
+        <button class="act act-out" onclick="window.markOut('${id}')">⬇ Out</button>
+        <button class="act act-half" onclick="window.markStatus('${id}','half')">🌓 Half</button>
+        <button class="act act-absent" onclick="window.markStatus('${id}','absent')">❌ Absent</button>
+        <button class="act act-edit" onclick="window.openTime('${id}')">✏️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function calcHours(t1,t2){
+  try{
+    const [h1,m1]=t1.split(':').map(Number);
+    const [h2,m2]=t2.split(':').map(Number);
+    const diff=(h2*60+m2)-(h1*60+m1);
+    if(diff<=0)return '--';
+    return (diff/60).toFixed(1)+'h';
+  }catch{return '--';}
+}
+
+// ====== MONTHLY REPORT ======
+function renderMonthly(){
+  const ids = Object.keys(staffList);
+  if(!ids.length){document.getElementById('monthWrap').innerHTML='<div class="empty"><div style="font-size:40px">📅</div><p>Staff નથી</p></div>';return;}
+
+  // Get all months from attendance
+  const months = new Set();
+  Object.keys(attendance).forEach(date=>months.add(date.slice(0,7)));
+  const sorted = [...months].sort().reverse();
+  if(!sorted.length){document.getElementById('monthWrap').innerHTML='<div class="empty"><div style="font-size:40px">📅</div><p>Data નથી</p></div>';return;}
+
+  document.getElementById('monthWrap').innerHTML = ids.map((id,i)=>{
+    const s = staffList[id];
+    const rows = sorted.map(m=>{
+      // Count days in this month
+      const days = Object.keys(attendance).filter(d=>d.startsWith(m));
+      const p = days.filter(d=>attendance[d]?.[id]?.status==='present').length;
+      const l = days.filter(d=>attendance[d]?.[id]?.status==='late').length;
+      const h = days.filter(d=>attendance[d]?.[id]?.status==='half').length;
+      const a = days.filter(d=>attendance[d]?.[id]?.status==='absent').length;
+      const total = p + l + (h*0.5);
+      const pay = s.salary ? Math.round(total * s.salary) : 0;
+      return {m, p, l, h, a, total, pay, days:days.length};
+    });
+
+    return`<div class="month-card">
+      <div class="month-head" onclick="toggleMonth('mc${id}')">
+        <div class="month-avatar ${avClass(s.name)}">${initials(s.name)}</div>
+        <div class="month-name">${s.name}<div style="font-size:10px;color:var(--muted);margin-top:2px">${s.role||'Staff'}</div></div>
+        <div class="month-stats">
+          <span class="ms ms-p">${rows[0]?.p||0}P</span>
+          <span class="ms ms-a">${rows[0]?.a||0}A</span>
+        </div>
+      </div>
+      <div class="month-detail" id="mc${id}">
+        ${rows.map(r=>`
+          <div class="month-row">
+            <span>${new Date(r.m+'-01').toLocaleDateString('gu-IN',{month:'long',year:'numeric'})}</span>
+            <span style="color:var(--accent)">${r.p}P</span>
+            <span style="color:var(--blue)">${r.l}L</span>
+            <span style="color:var(--yellow)">${r.h}H</span>
+            <span style="color:var(--red)">${r.a}A</span>
+            <span style="color:var(--text)">${s.salary?'₹'+r.pay.toLocaleString('en-IN'):r.total+'d'}</span>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.toggleMonth = function(id){
+  const el=document.getElementById(id);
+  el.style.display=el.style.display==='block'?'none':'block';
+};
+
+// ====== MANAGE STAFF ======
+function renderManage(){
+  const ids = Object.keys(staffList);
+  const el = document.getElementById('manageWrap');
+  if(!ids.length){el.innerHTML='<div class="empty"><div style="font-size:40px">👥</div><p>Staff ઉમેરો</p></div>';return;}
+  el.innerHTML = ids.map((id,i)=>`
+    <div class="manage-card">
+      <div class="avatar ${avClass(staffList[id].name)}" style="width:38px;height:38px;font-size:14px">${initials(staffList[id].name)}</div>
+      <div class="manage-info">
+        <div class="manage-name">${staffList[id].name}</div>
+        <div class="manage-role">${staffList[id].role||'Staff'}${staffList[id].salary?' · ₹'+staffList[id].salary+'/day':''}${staffList[id].mob?' · '+staffList[id].mob:''}</div>
+      </div>
+      <button class="del-btn" onclick="window.delStaff('${id}')">🗑</button>
+    </div>`).join('');
+}
+
+// ====== ACTIONS ======
+window.markIn = async function(id){
+  const time = nowTime();
+  const s = staffList[id];
+  const existing = getAtt(id, curDate)||{};
+  setSS('sync');
+  await set(ref(db,`attendance/${curDate}/${id}`),{
+    ...existing, status:'present', timeIn:time, staffName:s.name
+  });
+  toast(`⬆ ${s.name} — In: ${time}`);
+};
+
+window.markOut = async function(id){
+  const time = nowTime();
+  const s = staffList[id];
+  const existing = getAtt(id, curDate)||{};
+  if(!existing.timeIn){toast('⚠️ પહેલા Time In કરો!','#ff4757');return;}
+  setSS('sync');
+  await set(ref(db,`attendance/${curDate}/${id}`),{
+    ...existing, timeOut:time
+  });
+  toast(`⬇ ${s.name} — Out: ${time}`);
+};
+
+window.markStatus = async function(id, status){
+  const s = staffList[id];
+  const existing = getAtt(id, curDate)||{};
+  setSS('sync');
+  await set(ref(db,`attendance/${curDate}/${id}`),{
+    ...existing, status, staffName:s.name
+  });
+  const labels={present:'✅ Present',absent:'❌ Absent',half:'🌓 Half Day',late:'🕐 Late'};
+  toast(`${labels[status]}: ${s.name}`);
+};
+
+// ====== TIME EDIT ======
+window.openTime = function(id){
+  curStaffId = id;
+  const s = staffList[id];
+  const att = getAtt(id, curDate)||{};
+  document.getElementById('timeStaffName').textContent = '⏰ '+s.name;
+  document.getElementById('timeStaffSub').textContent = fmtDate(curDate);
+  document.getElementById('tIn').value = att.timeIn||'';
+  document.getElementById('tOut').value = att.timeOut||'';
+  document.getElementById('tStatus').value = att.status||'present';
+  document.getElementById('tNote').value = att.note||'';
+  document.getElementById('timeOvr').classList.add('show');
+  document.body.style.overflow='hidden';
+};
+window.closeTime = function(e){if(!e||e.target===document.getElementById('timeOvr')){document.getElementById('timeOvr').classList.remove('show');document.body.style.overflow='';}};
+window.saveTime = async function(){
+  if(!curStaffId) return;
+  const s = staffList[curStaffId];
+  setSS('sync');
+  await set(ref(db,`attendance/${curDate}/${curStaffId}`),{
+    status: document.getElementById('tStatus').value,
+    timeIn: document.getElementById('tIn').value,
+    timeOut: document.getElementById('tOut').value,
+    note: document.getElementById('tNote').value,
+    staffName: s.name
+  });
+  closeTime();
+  toast('✅ Save થઈ ગયું!');
+};
+
+// ====== ADD STAFF ======
+window.openAddStaff = function(){document.getElementById('addOvr').classList.add('show');document.body.style.overflow='hidden';};
+window.closeAdd = function(e){if(!e||e.target===document.getElementById('addOvr')){document.getElementById('addOvr').classList.remove('show');document.body.style.overflow='';}};
+window.addStaff = async function(){
+  const name = document.getElementById('sName').value.trim();
+  const role = document.getElementById('sRole').value;
+  const salary = parseInt(document.getElementById('sSalary').value)||0;
+  const mob = document.getElementById('sMob').value.trim();
+  if(!name){toast('⚠️ નામ ખૂટે!','#ff4757');return;}
+  setSS('sync');
+  const id = 's'+Date.now();
+  await set(ref(db,'staff/'+id),{id,name,role,salary,mob});
+  closeAdd();
+  toast('✅ '+name+' ઉમેર્યો!');
+  ['sName','sSalary','sMob'].forEach(i=>document.getElementById(i).value='');
+};
+
+window.delStaff = async function(id){
+  if(!confirm('શું '+staffList[id]?.name+' ને delete કરવો?')) return;
+  await remove(ref(db,'staff/'+id));
+  toast('🗑 Delete થઈ ગયો!');
+};
+
+// ====== DATE NAV ======
+window.changeDay = function(n){
+  const d=new Date(curDate+'T00:00:00');
+  d.setDate(d.getDate()+n);
+  curDate=d.toISOString().slice(0,10);
+  updateDateLbl();renderAll();
+};
+window.goToday = function(){curDate=todayStr();updateDateLbl();renderAll();};
+function updateDateLbl(){
+  const isToday=curDate===todayStr();
+  document.getElementById('dateLbl').textContent=(isToday?'📅 આજ — ':'')+fmtDate(curDate);
+}
+
+// ====== VIEW SWITCH ======
+window.switchView = function(n){
+  document.querySelectorAll('.view').forEach((v,i)=>v.classList.toggle('active',i===n));
+  document.querySelectorAll('.bnav').forEach((b,i)=>b.classList.toggle('active',i===n));
+  if(n===1) renderMonthly();
+  if(n===2) renderManage();
+};
+
+// ====== TOAST ======
+window.toast = function(msg,color){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.background=color||'var(--accent)';t.style.color=color?'#fff':'#000';
+  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);
+};
+
+function renderAll(){renderStats();renderStaffList();}
+
+// INIT
+updateDateLbl();
+</script>
+</body>
+</html>
