@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>💰 ઉધાર વસૂલી - જય ખોડીયાર</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#f5a623">
+<meta name="apple-mobile-web-app-title" content="ઉધાર વસૂલી">
+<link rel="apple-touch-icon" href="icon.png">
+<style>
+:root{--bg:#0a0c10;--s1:#12151d;--s2:#1a1f2e;--s3:#222840;--border:#2c3350;--accent:#f5a623;--red:#ff4757;--green:#2ed573;--blue:#1da1f2;--wa:#25d366;--text:#e8eaf0;--muted:#6b7399;--radius:14px}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;overflow-x:hidden}
+
+/* LOADER */
+.loader{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:16px}
+.loader-spinner{width:44px;height:44px;border:3px solid var(--s3);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader p{color:var(--muted);font-size:13px}
+.loader.hide{display:none}
+
+/* TOPBAR */
+.topbar{position:sticky;top:0;z-index:100;background:var(--s1);border-bottom:1px solid var(--border);padding:12px 16px 8px}
+.topbar-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.topbar h1{font-size:16px;font-weight:800;color:var(--accent)}
+.topbar h1 small{color:var(--muted);font-size:10px;font-weight:400;display:block}
+.top-right{display:flex;align-items:center;gap:8px}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0}
+.sync-dot.offline{background:var(--red)}
+.sync-dot.syncing{background:var(--accent);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.addbtn{background:var(--s3);border:1px solid var(--border);color:var(--text);padding:6px 13px;border-radius:20px;font-size:11px;cursor:pointer}
+.statrow{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.statrow::-webkit-scrollbar{display:none}
+.stat{flex-shrink:0;background:var(--s2);border:1px solid var(--border);border-radius:30px;padding:5px 12px;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.stat-val{font-weight:700;font-size:13px}
+.stat-lbl{color:var(--muted);font-size:10px}
+
+/* STAFF LOGIN */
+.staff-screen{position:fixed;inset:0;background:var(--bg);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:16px}
+.staff-screen h2{font-size:20px;font-weight:800;color:var(--accent);text-align:center}
+.staff-screen p{color:var(--muted);font-size:12px;text-align:center}
+.staff-btn{width:100%;max-width:300px;padding:16px;border-radius:12px;border:1px solid var(--border);background:var(--s2);color:var(--text);font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:12px}
+.staff-btn:active{background:var(--s3)}
+.staff-icon{font-size:28px}
+
+/* TABS */
+.tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:8px 16px;background:var(--s1);border-bottom:1px solid var(--border)}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex-shrink:0;padding:6px 13px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid var(--border);background:var(--s2);color:var(--muted);cursor:pointer}
+.tab.active{background:var(--accent);color:#000;border-color:var(--accent)}
+
+/* SEARCH + SORT */
+.searchbar{padding:8px 12px;background:var(--s1);border-bottom:1px solid var(--border)}
+.searchbar input{width:100%;padding:9px 14px;background:var(--s2);border:1px solid var(--border);border-radius:30px;color:var(--text);font-size:14px;outline:none}
+.sortrow{padding:6px 12px;display:flex;align-items:center;gap:6px;background:var(--bg);border-bottom:1px solid var(--border)}
+.sortrow span{color:var(--muted);font-size:10px}
+.sort-btn{padding:4px 11px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:10px;cursor:pointer}
+.sort-btn.active{background:var(--s3);color:var(--text);border-color:var(--accent)}
+
+/* CARDS */
+.list{padding:8px 10px 100px}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;overflow:hidden}
+.card.urgent{border-left:3px solid var(--red)}
+.card.warn{border-left:3px solid var(--accent)}
+.card-top{padding:12px 12px 8px}
+.card-row1{display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
+.c-name{font-weight:700;font-size:14px;color:#fff;line-height:1.2}
+.c-amount{font-size:18px;font-weight:800;color:var(--accent);white-space:nowrap}
+.c-meta{margin-top:5px;display:flex;flex-wrap:wrap;gap:4px}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600}
+.br{background:rgba(255,71,87,.12);color:var(--red);border:1px solid rgba(255,71,87,.2)}
+.bo{background:rgba(245,166,35,.12);color:var(--accent);border:1px solid rgba(245,166,35,.2)}
+.bg{background:rgba(46,213,115,.12);color:var(--green);border:1px solid rgba(46,213,115,.2)}
+.bb{background:rgba(29,161,242,.12);color:var(--blue);border:1px solid rgba(29,161,242,.2)}
+.bx{background:rgba(107,115,153,.1);color:var(--muted);border:1px solid rgba(107,115,153,.15)}
+.c-model{margin-top:4px;font-size:10px;color:var(--muted)}
+.card-actions{display:flex;border-top:1px solid var(--border)}
+.act-btn{flex:1;padding:12px 4px;border:none;background:transparent;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;position:relative}
+.act-btn:not(:last-child)::after{content:'';position:absolute;right:0;top:20%;height:60%;width:1px;background:var(--border)}
+.act-btn:active{background:var(--s3)}
+.act-wa{color:var(--wa)}
+.act-call{color:var(--green)}
+.act-done{color:var(--muted)}
+
+/* OVERLAYS */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:flex-end;justify-content:center}
+.overlay.show{display:flex}
+.sheet{background:var(--s1);border-radius:20px 20px 0 0;width:100%;max-height:88vh;overflow-y:auto;border-top:1px solid var(--border);padding-bottom:20px}
+.sheet-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:10px auto 0}
+.sheet-head{padding:14px 18px;border-bottom:1px solid var(--border)}
+.sheet-head h3{font-size:15px;font-weight:700;color:var(--accent)}
+.sheet-head p{font-size:11px;color:var(--muted);margin-top:2px}
+.tpl-box{margin:12px 16px 0}
+.tpl-box label{display:block;font-size:10px;color:var(--muted);margin-bottom:5px;text-transform:uppercase}
+.tpl-box textarea{width:100%;background:var(--s2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:10px;font-size:12px;line-height:1.7;outline:none;resize:none;font-family:inherit}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin:8px 16px}
+.chip{padding:4px 11px;border-radius:20px;background:var(--s3);border:1px solid var(--border);font-size:10px;color:var(--accent);cursor:pointer}
+.preview-box{margin:10px 16px;background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:12px;line-height:1.8;white-space:pre-wrap;color:var(--text)}
+.sheet-btns{padding:12px 16px 0;display:flex;gap:8px}
+.sbtn{flex:1;padding:13px;border-radius:11px;border:none;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px}
+.sbtn-wa{background:var(--wa);color:#000}
+.sbtn-cancel{background:var(--s3);color:var(--muted)}
+.form-group{padding:0 16px 12px}
+.form-group label{display:block;font-size:10px;color:var(--muted);margin-bottom:5px;text-transform:uppercase}
+.form-group input,.form-group select{width:100%;padding:11px 13px;background:var(--s2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;outline:none}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 12px}
+.fg2 label{display:block;font-size:10px;color:var(--muted);margin-bottom:5px;text-transform:uppercase}
+.fg2 input{width:100%;padding:11px 13px;background:var(--s2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;outline:none}
+
+/* PAID MARK SHEET */
+.paid-input-row{display:flex;gap:8px;padding:0 16px 12px;align-items:flex-end}
+.paid-input-row input{flex:1;padding:11px 13px;background:var(--s2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;outline:none}
+
+/* ACTIVITY LOG */
+.activity-item{margin:0 12px 8px;background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;gap:8px;align-items:center}
+.act-icon{font-size:20px;flex-shrink:0}
+.act-info{flex:1;min-width:0}
+.act-title{font-size:12px;color:var(--text);font-weight:600}
+.act-sub{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* TOAST */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--green);color:#000;padding:9px 18px;border-radius:30px;font-size:12px;font-weight:700;z-index:999;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.rcount{padding:6px 12px;font-size:10px;color:var(--muted)}
+.empty{text-align:center;padding:50px 20px;color:var(--muted)}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--s1);border-top:1px solid var(--border);display:flex;padding:6px 0 env(safe-area-inset-bottom,6px);z-index:50}
+.bnav{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px}
+.bnav span{font-size:20px}
+.bnav p{font-size:9px;color:var(--muted)}
+.bnav.active p{color:var(--accent)}
+
+.view{display:none;padding-bottom:80px}
+.view.active{display:block}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div class="loader" id="loader">
+  <div class="loader-spinner"></div>
+  <p>Firebase સાથે connect થઈ રહ્યું છે...</p>
+</div>
+
+<!-- STAFF LOGIN -->
+<div class="staff-screen" id="staffScreen" style="display:none">
+  <div style="font-size:52px">🏪</div>
+  <h2>જય ખોડીયાર શો રૂમ</h2>
+  <p>તમે કોણ છો? Select કરો</p>
+  <button class="staff-btn" onclick="loginStaff('👑 Owner')"><span class="staff-icon">👑</span> Owner</button>
+  <button class="staff-btn" onclick="loginStaff('👤 Staff 1')"><span class="staff-icon">👤</span> Staff 1</button>
+  <button class="staff-btn" onclick="loginStaff('👤 Staff 2')"><span class="staff-icon">👤</span> Staff 2</button>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" style="display:none">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-row">
+    <h1>💰 ઉધાર વસૂલી <small>જય ખોડીયાર શો રૂમ - ઢસા</small></h1>
+    <div class="top-right">
+      <div class="sync-dot" id="syncDot" title="Sync Status"></div>
+      <span style="font-size:10px;color:var(--muted)" id="staffName"></span>
+      <button id="installBtn" onclick="window.installApp()" style="display:none;background:var(--accent);border:none;color:#000;padding:6px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;align-items:center;gap:4px">📲 Install</button>
+      <button class="addbtn" onclick="openAdd()">+ ઉમેરો</button>
+    </div>
+  </div>
+  <div class="statrow" id="statRow"></div>
+</div>
+
+<!-- VIEWS -->
+<!-- 1. LIST VIEW -->
+<div id="view0" class="view active">
+  <div class="tabs" id="tabsRow"></div>
+  <div class="searchbar"><input type="search" id="srch" placeholder="🔍 નામ, ગામ, model..." oninput="renderList()" autocomplete="off"></div>
+  <div class="sortrow">
+    <span>Sort:</span>
+    <button class="sort-btn active" onclick="setSort('days',this)">જૂની ઉધાર</button>
+    <button class="sort-btn" onclick="setSort('baki',this)">₹ ઊંચી</button>
+    <button class="sort-btn" onclick="setSort('name',this)">A–Z</button>
+  </div>
+  <div class="rcount" id="rcount"></div>
+  <div class="list" id="listWrap"></div>
+</div>
+
+<!-- 2. ACTIVITY LOG VIEW -->
+<div id="view1" class="view">
+  <div style="padding:12px 16px 8px;font-size:13px;font-weight:700;color:var(--accent)">📋 Recent Activity</div>
+  <div id="activityList"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <div class="bnav active" id="nav0" onclick="switchView(0)"><span>📋</span><p>ઉધાર List</p></div>
+  <div class="bnav" id="nav1" onclick="switchView(1)"><span>🕐</span><p>Activity</p></div>
+</div>
+
+</div><!-- /mainApp -->
+
+<!-- WA OVERLAY -->
+<div class="overlay" id="waOvr" onclick="closeWA(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head"><h3 id="waName">WhatsApp</h3><p id="waSub"></p></div>
+    <div class="tpl-box">
+      <label>Message Template</label>
+      <textarea id="msgTpl" rows="6" oninput="prevMsg()">શ્રીમાન {NAME}
+
+તમારું પેમેન્ટ જય ખોડીયાર શો રૂમ-ઢસા ખાતે બાકી છે જે જલ્દી ચૂકતે કરી આપશો જી.
+
+આભાર.
+MO. 8160323142</textarea>
+    </div>
+    <div class="chips">
+      <span class="chip" onclick="ins('{NAME}')">👤 NAME</span>
+      <span class="chip" onclick="ins('{BAKI}')">💰 BAKI</span>
+      <span class="chip" onclick="ins('{MODEL}')">📦 MODEL</span>
+      <span class="chip" onclick="ins('{ADRS}')">📍 ADRS</span>
+    </div>
+    <div class="tpl-box"><label>Preview</label><div class="preview-box" id="prev"></div></div>
+    <div class="sheet-btns">
+      <button class="sbtn sbtn-cancel" onclick="closeWA()">✕</button>
+      <button class="sbtn sbtn-wa" id="waBtn">💬 WhatsApp ખોલો</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAID OVERLAY -->
+<div class="overlay" id="paidOvr" onclick="closePaid(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head"><h3 id="paidName">✅ ચૂકતે કરો</h3><p id="paidSub"></p></div>
+    <div style="height:12px"></div>
+    <div class="form-group">
+      <label>કેટલા ₹ મળ્યા? (ખાલી છોડો = પૂરા)</label>
+      <input type="number" id="paidAmt" placeholder="0 = પૂરા paid" inputmode="numeric">
+    </div>
+    <div class="form-group">
+      <label>નોંધ</label>
+      <input type="text" id="paidNote" placeholder="Cash/UPI/...">
+    </div>
+    <div class="sheet-btns">
+      <button class="sbtn sbtn-cancel" onclick="closePaid()">✕</button>
+      <button class="sbtn" style="background:var(--green);color:#000" id="paidBtn" onclick="confirmPaid()">✅ Confirm</button>
+    </div>
+    <div style="height:12px"></div>
+  </div>
+</div>
+
+<!-- ADD OVERLAY -->
+<div class="overlay" id="addOvr" onclick="closeAdd(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head"><h3>➕ નવો ગ્રાહક</h3><p>ઉધારી record ઉમેરો</p></div>
+    <div style="height:14px"></div>
+    <div class="form-group"><label>Department *</label>
+      <select id="aDept" style="width:100%;padding:11px 13px;background:var(--s2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;outline:none">
+        <option value="">-- Select --</option>
+        <option value="LG">📺 LG</option>
+        <option value="HERO">🏍️ HERO</option>
+        <option value="WORKSHOP">🔧 WORKSHOP</option>
+      </select>
+    </div>
+    <div class="form-group"><label>ગ્રાહક નામ *</label><input id="aN" placeholder="નામ..." oninput="this.value=this.value.toUpperCase()"></div>
+    <div class="form-group"><label>Mobile *</label><input id="aP" type="tel" placeholder="9876543210"></div>
+    <div class="fg2">
+      <div><label>ઉધાર ₹ *</label><input id="aB" type="number" placeholder="0"></div>
+      <div><label>ગામ</label><input id="aA" placeholder="ગામ" oninput="this.value=this.value.toUpperCase()"></div>
+    </div>
+    <div class="form-group"><label>Model/Product</label><input id="aM" placeholder="Model..." oninput="this.value=this.value.toUpperCase()"></div>
+    <div class="form-group"><label>ખરીદ તારીખ * (DD.MM.YYYY)</label><input id="aD" placeholder="DD.MM.YYYY"></div>
+    <div class="sheet-btns">
+      <button class="sbtn sbtn-cancel" onclick="closeAdd()">✕</button>
+      <button class="sbtn" style="background:linear-gradient(135deg,#e8522a,var(--accent));color:#fff" onclick="addCust()">✅ Save</button>
+    </div>
+    <div style="height:20px"></div>
+  </div>
+</div>
+
+<!-- EDIT OVERLAY -->
+<div class="overlay" id="editOvr" onclick="closeEdit(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head"><h3 id="editTitle">✏️ Edit Customer</h3></div>
+    <div style="height:12px"></div>
+    <div class="form-group"><label>Department</label>
+      <select id="eDept" style="width:100%;padding:11px 13px;background:var(--s2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;outline:none">
+        <option value="">-- Select --</option>
+        <option value="LG">📺 LG</option>
+        <option value="HERO">🏍️ HERO</option>
+        <option value="WORKSHOP">🔧 WORKSHOP</option>
+      </select>
+    </div>
+    <div class="form-group"><label>ગ્રાહક નામ</label><input id="eN" placeholder="નામ..." oninput="this.value=this.value.toUpperCase()"></div>
+    <div class="form-group"><label>Mobile</label><input id="eP" type="tel" placeholder="9876543210"></div>
+    <div class="fg2">
+      <div><label>ઉધાર ₹</label><input id="eB" type="number" placeholder="0"></div>
+      <div><label>ગામ</label><input id="eA" placeholder="ગામ"></div>
+    </div>
+    <div class="form-group"><label>Model/Product</label><input id="eM" placeholder="Model..."></div>
+    <div class="form-group"><label>ખરીદ તારીખ (DD.MM.YYYY)</label><input id="eD" placeholder="DD.MM.YYYY"></div>
+    <div class="sheet-btns">
+      <button class="sbtn sbtn-cancel" onclick="closeEdit()">✕</button>
+      <button class="sbtn" style="background:var(--blue);color:#fff" onclick="saveEdit()">✅ Save</button>
+    </div>
+    <div style="height:20px"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- FIREBASE SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue, set, push, update, remove, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBAK95s01LTGQ0R_H08pVdP4-NRXWLrwpc",
+  authDomain: "jay-khodiyar-8ad32.firebaseapp.com",
+  databaseURL: "https://jay-khodiyar-8ad32-default-rtdb.firebaseio.com",
+  projectId: "jay-khodiyar-8ad32",
+  storageBucket: "jay-khodiyar-8ad32.firebasestorage.app",
+  messagingSenderId: "621441145597",
+  appId: "1:621441145597:web:26b65a9d7984dae970fc94"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// ====== INITIAL DATA ======
+const SEED = [{"id":"c1","date":"10.05.2020","name":"Dhavalbhai Chavda","adrs":"DHASA GAM","mob":"7984518589","model":"D221ASAN REF 215","baki":12000,"mark":"SANJAY","type":"CASH","days":2129},{"id":"c2","date":"23.05.2020","name":"Kishorbhai Sindhav","adrs":"PATANA","mob":"9879171729","model":"Q18FNXD1 AC TON1.5","baki":26700,"mark":"RED","type":"CASH","days":2116},{"id":"c3","date":"09.08.2020","name":"Vishal G Solanki","adrs":"JALALPUR","mob":"7698016125","model":"T8088NEDLA 7.0 KG TWM","baki":2000,"mark":"SAGA","type":"CASH","days":2038},{"id":"c4","date":"11.08.2020","name":"Prakash R Mer","adrs":"PATANA","mob":"9825460779","model":"VIVI Y 11","baki":500,"mark":"RED","type":"CASH","days":2036},{"id":"c5","date":"16.08.2020","name":"Mitulbhai Dabhi","adrs":"PATANA","mob":"9978285784","model":"OPPO F 15 4/128","baki":13500,"mark":"RED","type":"CASH","days":2031},{"id":"c6","date":"23.08.2020","name":"Dilavrkhan Pathan","adrs":"DHASA GAM","mob":"9099467599","model":"VIVO Y91I 3/32","baki":3500,"mark":"RED","type":"CASH","days":2024},{"id":"c7","date":"25.09.2020","name":"Chatrpalsinh Gohil","adrs":"JALALPUR","mob":"9099551007","model":"VIVO Y20 4/64","baki":21900,"mark":"SANJAY","type":"CASH","days":1991},{"id":"c8","date":"25.10.2020","name":"Sandipbhai Rathod","adrs":"DHASA JN","mob":"7778809554","model":"OPPO F17PRO 8/128","baki":8700,"mark":"RED","type":"LOAN","days":1961},{"id":"c9","date":"01.11.2020","name":"Ghanshyambhai Vadhel","adrs":"MEMDA","mob":"9824454988","model":"LG FULL TOP LOAD 6.5 KG","baki":6800,"mark":"SAGA","type":"LOAN","days":1954},{"id":"c10","date":"11.11.2020","name":"Prakash Rajabhai Mer","adrs":"PATANA","mob":"9825460779","model":"VIVO Y20I 3/64","baki":12500,"mark":"RED","type":"CASH","days":1944},{"id":"c11","date":"13.11.2020","name":"Rajdipsinh S Gohil","adrs":"JALALPUR","mob":"9712760262","model":"B191KSDX","baki":700,"mark":"WOFF","type":"CASH","days":1942},{"id":"c12","date":"03.01.2021","name":"Dhaval Chavda","adrs":"DHASA GAM","mob":"7984518589","model":"SAM M31S 8/128","baki":13500,"mark":"SANJAY","type":"CASH","days":1891},{"id":"c13","date":"20.06.2021","name":"Jayanti Najabhai Mer","adrs":"PATANA","mob":"7433011727","model":"OPPO A54 4/128","baki":14000,"mark":"SANJAY","type":"CASH","days":1723},{"id":"c14","date":"26.06.2021","name":"Sahdevsinh Pragjibhai Padhariya","adrs":"DHASA GAM","mob":"9913532926","model":"LG GL-B201ASCY 190L","baki":2500,"mark":"WOFF","type":"CASH","days":1717},{"id":"c15","date":"28.06.2021","name":"Bhaveshbhai Parmar","adrs":"BHURAKHIYA","mob":"9023972576","model":"OPPO A11K 2/32","baki":2500,"mark":"SAGA","type":"CASH","days":1715},{"id":"c16","date":"15.09.2021","name":"Gajendrasinh Temubha Gohil","adrs":"PATANA","mob":"9313154139","model":"SAMSUNG M11 4/64","baki":11000,"mark":"ARJUN","type":"CASH","days":1636},{"id":"c17","date":"07.10.2021","name":"Nareshbhai Thakarshibhai Goletar","adrs":"PATANA","mob":"9737127672","model":"SAM A12 4/64","baki":8000,"mark":"RED","type":"CASH","days":1614},{"id":"c18","date":"12.10.2021","name":"Amitsinh P Padhariya","adrs":"DHASA GAM","mob":"9714740513","model":"SAM FOLD 2 12/256","baki":1000,"mark":"WOFF","type":"CASH","days":1609},{"id":"c19","date":"20.12.2021","name":"Vinodbhai Zapadiya","adrs":"LIMBALI","mob":"8128573452","model":"F&D FLT3219SDT","baki":15500,"mark":"RED","type":"CASH","days":1540},{"id":"c20","date":"20.12.2021","name":"Rajakbhai Multani","adrs":"DHASA GAM","mob":"9979620731","model":"SAM METRO 313","baki":2300,"mark":"RED","type":"CASH","days":1540},{"id":"c21","date":"18.01.2022","name":"Girishbhai Shukal","adrs":"DHASA GAM","mob":"9427432895","model":"PLESURE","baki":15000,"mark":"RED","type":"CASH","days":1511},{"id":"c22","date":"08.03.2022","name":"Abhaysinh Ghanshyambhai Sindhav","adrs":"DHASA JN","mob":"9033387763","model":"AMSTRAD AM13PI3T","baki":1700,"mark":"WOFF","type":"CASH","days":1462},{"id":"c23","date":"31.03.2022","name":"Shailesh Sindhav","adrs":"JALALPUR","mob":"9624224705","model":"LG GL-B199OSJB 190L","baki":5000,"mark":"SAGA","type":"CASH","days":1439},{"id":"c24","date":"10.04.2022","name":"Abhi Bhikhubhai Pandya","adrs":"DHASA GAM","mob":"9428040859","model":"LG GL-201APVD 190L","baki":1500,"mark":"WOFF","type":"CASH","days":1429},{"id":"c25","date":"13.04.2022","name":"Kishan Baldevbhai Agravat","adrs":"DHASA GAM","mob":"8000006845","model":"SAMSUNG E1215I WHITE","baki":1500,"mark":"RED","type":"CASH","days":1426},{"id":"c26","date":"26.04.2022","name":"Himmatbhai Jadavbhai Rathod","adrs":"PIPALVA","mob":"9879877004","model":"LG GL-B199OPGC 190L","baki":1800,"mark":"RED","type":"CASH","days":1413},{"id":"c27","date":"01.05.2022","name":"Rameshbhai Solanki","adrs":"ANIDA","mob":"9925464173","model":"HAIER HFC-500DM5","baki":3000,"mark":"SAGA","type":"CASH","days":1408},{"id":"c28","date":"03.05.2022","name":"Mustufabhai Abdulbhai Chavda","adrs":"DHASA JN","mob":"9426981351","model":"LG GL-N292BPGY 260L","baki":1000,"mark":"RED","type":"BAJAJ","days":1406},{"id":"c29","date":"03.05.2022","name":"Mustufabhai Abdulbhai Chavda","adrs":"DHASA JN","mob":"9426981351","model":"AMSTRAD AMWS108L 10.8 KG","baki":1000,"mark":"RED","type":"BAJAJ","days":1406},{"id":"c30","date":"29.07.2022","name":"Kishan Baldevbhai Agravat","adrs":"DHASA JN","mob":"8000006845","model":"OPPO A57 4/64GB BLACK","baki":4150,"mark":"RED","type":"BAJAJ","days":1319},{"id":"c31","date":"28.09.2022","name":"Dhaval Mansukhbhai Chavda","adrs":"DHASA GAM","mob":"9099400724","model":"TREEVIEW IND3205ST","baki":12500,"mark":"SANJAY","type":"CASH","days":1258},{"id":"c32","date":"07.11.2022","name":"Vipulbhai Dayabhai Parmar","adrs":"BHURAKHIYA","mob":"9737310780","model":"MERITON RAYON","baki":14500,"mark":"SAGA","type":"CASH","days":1218},{"id":"c33","date":"14.11.2022","name":"Shitalben Kher","adrs":"BHANDARIYA","mob":"9313814671","model":"AMSTRAD AM20PI3T","baki":4000,"mark":"SAGA","type":"CASH","days":1211},{"id":"c34","date":"16.11.2022","name":"Kripalsinh Sujansinh Gohil","adrs":"BHAVNAGAR","mob":"9558512051","model":"KELVINATOR KWS-A850BR 8.5KG","baki":13500,"mark":"SHORUM","type":"CASH","days":1209},{"id":"c35","date":"17.11.2022","name":"Ankit Kalubhai Mer","adrs":"PATANA","mob":"6354513414","model":"OPPO A55 6/128GB BLUE","baki":13000,"mark":"SANJAY","type":"CASH","days":1208},{"id":"c36","date":"12.12.2022","name":"Pareshbhai Bavaliya","adrs":"DHASA GAM","mob":"9377237777","model":"LG GL-D221APZD 215L","baki":22000,"mark":"RED","type":"CASH","days":1183},{"id":"c37","date":"15.01.2023","name":"Jaypalsinh Chudasama","adrs":"BHAVNAGAR","mob":"7567046404","model":"KELVINATOR KWS-A850BR","baki":13500,"mark":"SHORUM","type":"CASH","days":1149},{"id":"c38","date":"16.01.2023","name":"Rasikbhai Kher","adrs":"ANIDA","mob":"9825764642","model":"SAM S22 ULTRA 12/256 BLACK","baki":60000,"mark":"SANJAY","type":"CASH","days":1148},{"id":"c39","date":"30.03.2023","name":"Naranbhai Parmar","adrs":"MANDVA","mob":"9510213038","model":"LG T80SPSF2Z 8.0KG","baki":24000,"mark":"ARJUN","type":"CASH","days":1075},{"id":"c40","date":"08.04.2023","name":"Prakash Ghanshyambhai Solanki","adrs":"JALALPUR","mob":"9723680386","model":"LG GL-D221APZD 215L","baki":20500,"mark":"SAGA","type":"CASH","days":1066},{"id":"c41","date":"12.04.2023","name":"Amitaben Boghabhai Rathod","adrs":"DHASA GAM","mob":"9974760012","model":"VIVO Y56 5G 8/128G ORANGE","baki":1000,"mark":"RED","type":"BAJAJ","days":1062},{"id":"c42","date":"19.04.2023","name":"Ankit Kalubhai Mer","adrs":"PATANA","mob":"6354513414","model":"VIVO Y15S 3/32GB GREEN","baki":9500,"mark":"SANJAY","type":"CASH","days":1055},{"id":"c43","date":"22.04.2023","name":"Matrukrupa Mobile","adrs":"DHASA GAM","mob":"9586104083","model":"SAMSUNG B315D BLACK","baki":1860,"mark":"WOFF","type":"CASH","days":1052},{"id":"c44","date":"01.05.2023","name":"Jaypalsinh Chudasama","adrs":"BHAVNAGAR","mob":"7567046404","model":"CRUISE AC 1.5T 5S","baki":36500,"mark":"SHORUM","type":"CASH","days":1043},{"id":"c45","date":"09.05.2023","name":"Ruturaj Yadav","adrs":"DHASA JN","mob":"9723590036","model":"VIVO Y15C 3/64 BLUE","baki":1500,"mark":"GREEN","type":"CASH","days":1035},{"id":"c46","date":"09.05.2023","name":"Dhaval Padhariya Krishna Mobile","adrs":"DHASA GAM","mob":"7016224201","model":"SAMSUNG B315E","baki":1860,"mark":"RED","type":"CASH","days":1035},{"id":"c47","date":"11.05.2023","name":"Ashokbhai Dehabhai Der","adrs":"PIPALVA","mob":"6351217073","model":"LLOYD AC 1.5T 3S","baki":5000,"mark":"RED","type":"CASH","days":1033},{"id":"c48","date":"17.05.2023","name":"Rahulkumar Balabhai Rathod","adrs":"DHASA GAM","mob":"9913518318","model":"LG RS-Q19BNZE 1.5T 5S","baki":17700,"mark":"SHORUM","type":"BAJAJ","days":1027},{"id":"c49","date":"01.06.2023","name":"Babubhai Shinol","adrs":"GADHADA","mob":"9925942815","model":"OPPO A17 4/64GB BLUE","baki":5750,"mark":"RED","type":"SYROM","days":1012},{"id":"c50","date":"15.06.2023","name":"Bharatbhai Bhupatbhai Dabhi","adrs":"DHASA JN","mob":"9313935158","model":"OPPO A57 4/64GB GREEN","baki":13000,"mark":"RED","type":"SYROM","days":998},{"id":"c51","date":"19.06.2023","name":"Virambhai Gohil","adrs":"PATANA","mob":"7990393237","model":"VIVO Y16 4/128GB BLACK","baki":2000,"mark":"RED","type":"CASH","days":994},{"id":"c52","date":"18.08.2023","name":"Mukeshbhai Ghusabhai Chauhan","adrs":"PATANA","mob":"9723012827","model":"BAJAJ DURATO BLUE","baki":1700,"mark":"RED","type":"CASH","days":934},{"id":"c53","date":"15.09.2023","name":"Vishal Bharatbhai Bhensjaliya","adrs":"DHASA GAM","mob":"7698260177","model":"SAMSUNG A14 5G 6/128 BLACK","baki":750,"mark":"RED","type":"BAJAJ","days":906},{"id":"c54","date":"23.09.2023","name":"Jemish Bhikhabhai Gauswami","adrs":"MANDVA","mob":"8347500501","model":"OPPO A78 5G 8/128 BLUE","baki":2500,"mark":"RED","type":"SYROM","days":898},{"id":"c55","date":"31.10.2023","name":"Jatingiri Nareshgiri Gauswami","adrs":"DHASA","mob":"9898977387","model":"KELVI REF KRD-F200EBPKWS","baki":5000,"mark":"SHORUM","type":"CASH","days":860},{"id":"c56","date":"12.11.2023","name":"Sanabhai Mer","adrs":"PATANA","mob":"9537816282","model":"VIVO Y17S 4/128 GREEN","baki":10500,"mark":"RED","type":"CASH","days":848},{"id":"c57","date":"14.12.2023","name":"Prahladsinh Prabhatsinh Dodiya","adrs":"MANDVA","mob":"6352191857","model":"LG 32LQ640","baki":1050,"mark":"RED","type":"BAJAJ","days":816},{"id":"c58","date":"28.12.2023","name":"Pravinbhai Vanodiya","adrs":"JALALPUR","mob":"7226054208","model":"BAJAJ AERONO","baki":3000,"mark":"RED","type":"CASH","days":802},{"id":"c59","date":"13.01.2024","name":"Dhirubhai Parmar","adrs":"BHURAKHIYA","mob":"8347701078","model":"ANANDI SPARK PRO","baki":6500,"mark":"SAGA","type":"CASH","days":786},{"id":"c60","date":"10.02.2024","name":"Mandipsinh Raghuvirsinh Gohil","adrs":"PATANA","mob":"9328208284","model":"SAM GALAXY WATCH 4 44MM","baki":5000,"mark":"RED","type":"ROCKET","days":758},{"id":"c61","date":"18.03.2024","name":"Gajendrasinh Temubha Gohil","adrs":"PATANA","mob":"9313154139","model":"PIXELS ACG 04-150D","baki":3500,"mark":"RED","type":"CASH","days":721},{"id":"c62","date":"24.03.2024","name":"Babubhai Multani","adrs":"DHASA GAM","mob":"9979694788","model":"LG GL-B201ASLD","baki":1000,"mark":"RED","type":"BAJAJ","days":715},{"id":"c63","date":"28.03.2024","name":"Anil Vaghela","adrs":"PATANA","mob":"9328170862","model":"SUMMERCOOL KOHINOOR","baki":3000,"mark":"RED","type":"CASH","days":711},{"id":"c64","date":"03.04.2024","name":"Kalpeshbhai Sureshbhai Bavaliya","adrs":"MANDAVDHAR","mob":"7698081501","model":"LG 8 KG T80SNMB1Z","baki":21500,"mark":"ARJUN","type":"CASH","days":705},{"id":"c65","date":"13.04.2024","name":"Kishorbhai Hamirbhai Sindhav","adrs":"PATANA","mob":"9879171729","model":"TCL LED 65P635PRO","baki":55500,"mark":"RED","type":"CASH","days":695},{"id":"c66","date":"22.04.2024","name":"Kuldevi Civil Work","adrs":"VADODARA","mob":"7698081501","model":"LLOYD GLS19I3FWSGS","baki":4500,"mark":"ARJUN","type":"GST","days":686},{"id":"c67","date":"10.05.2024","name":"Sanjaybhai Makabhai Mer","adrs":"PATANA","mob":"9712805380","model":"LIFE CARE SHAGUN 6KG","baki":1600,"mark":"RED","type":"BAJAJ","days":668},{"id":"c68","date":"26.05.2024","name":"Hiteshbhai Shantibhai Chadotara","adrs":"DHASA GAM","mob":"7567921553","model":"LG GL-B201ASLD","baki":1000,"mark":"GREEN","type":"BAJAJ","days":652},{"id":"c69","date":"31.05.2024","name":"Jaybhai Rabari","adrs":"DHASA GAM","mob":"6354700087","model":"BAJAJ ENERGOS 26 2","baki":6600,"mark":"GREEN","type":"CASH","days":647},{"id":"c70","date":"10.07.2024","name":"Mahadev Oil Industries","adrs":"BHANDARIYA","mob":"8160172828","model":"LG GL-B201ASLD","baki":17000,"mark":"RED","type":"GST","days":607},{"id":"c71","date":"13.07.2024","name":"Jayrajbhai Gohil","adrs":"DHASA GAM","mob":"7572903179","model":"LG GL-B201ABHD","baki":1700,"mark":"RED","type":"CASH","days":604},{"id":"c72","date":"01.08.2024","name":"Vinubhai Bhikhabhai Zala","adrs":"PATANA","mob":"9016066863","model":"LIFECARE STAR","baki":2600,"mark":"GREEN","type":"BAJAJ","days":585},{"id":"c73","date":"11.09.2024","name":"Ranjitbhai Pratapbhai Dodiya","adrs":"DHASA GAM","mob":"9724131274","model":"OPPO A18 4/64GB BLACK","baki":1200,"mark":"WOFF","type":"SYROM","days":544},{"id":"c74","date":"16.09.2024","name":"Dhaval Mansukhbhai Chavda","adrs":"DHASA GAM","mob":"9099400724","model":"OPPO F25PRO 8/128 RED","baki":10000,"mark":"SANJAY","type":"CASH","days":539},{"id":"c75","date":"13.12.2024","name":"Harpalbhai Arvindbhai Padhariya","adrs":"DHASA GAM","mob":"8140489051","model":"LG T70SPSF1ZA","baki":5000,"mark":"GREEN","type":"CASH","days":451},{"id":"c76","date":"23.12.2024","name":"Laldas Bhagvandas Nimavat","adrs":"MANDVA","mob":"9427623810","model":"THD10NWM","baki":7400,"mark":"GREEN","type":"BAJAJ","days":441},{"id":"c77","date":"28.01.2025","name":"Rahulkumar Balabhai Rathod","adrs":"DHASA GAM","mob":"9913518318","model":"LG REF GL-B201APZD","baki":16500,"mark":"SHORUM","type":"CASH","days":405},{"id":"c78","date":"10.02.2025","name":"Rameshbhai Solanki","adrs":"ANIDA","mob":"9925464173","model":"LG TS-Q18WNXE","baki":9000,"mark":"SAGA","type":"CASH","days":392},{"id":"c79","date":"10.02.2025","name":"Jitubhai Vanrajbhai Bhamani","adrs":"DHASA JN","mob":"9714361326","model":"KELVI KWS-A800TB","baki":3000,"mark":"GREEN","type":"CASH","days":392},{"id":"c80","date":"22.02.2025","name":"Gajendrasinh Gohil","adrs":"PATANA","mob":"9313154139","model":"LLOYD AC GLS18C3YWADS","baki":33000,"mark":"RED","type":"CASH","days":380},{"id":"c81","date":"10.03.2025","name":"Jivrajbhai Bhikhabhai Sangadiya","adrs":"KAMPARDI","mob":"9913030736","model":"GANGNAM LED TV","baki":1500,"mark":"GREEN","type":"CASH","days":364},{"id":"c82","date":"16.03.2025","name":"Valabhai Vankabhai Sangadiya","adrs":"KAMPARDI","mob":"9879466225","model":"GANGNAM LED TV","baki":1000,"mark":"GREEN","type":"CASH","days":358},{"id":"c83","date":"16.03.2025","name":"Dhavalkumar Narbherambhai Solanki","adrs":"DHASA GAM","mob":"9879473346","model":"LG B201ASHD","baki":2600,"mark":"GREEN","type":"BAJAJ","days":358},{"id":"c84","date":"21.03.2025","name":"Shaktisinh Parmar","adrs":"DHASA GAM","mob":"9601072748","model":"OPPO F27 PRO+ 8/128GB BLUE","baki":17200,"mark":"RED","type":"DR.EMI","days":353},{"id":"c85","date":"31.03.2025","name":"Harshil Jitendrabhai Vadhel","adrs":"MEMDA","mob":"7862948497","model":"LIFECARE STRONG PLUS","baki":18000,"mark":"SAGA","type":"CASH","days":343},{"id":"c86","date":"04.04.2025","name":"Gajendrasinh Gohil","adrs":"PATANA","mob":"9313154139","model":"SAMSUNG A06 5G 4/128GB","baki":4000,"mark":"RED","type":"CASH","days":339},{"id":"c87","date":"30.04.2025","name":"Vipulbhai Ramjibhai Makwana","adrs":"DHASA GAM","mob":"8320641013","model":"LG GL-N292BDSY","baki":15000,"mark":"GREEN","type":"CASH","days":313},{"id":"c88","date":"04.05.2025","name":"Ghanshyambhai Dodiya","adrs":"JALALPUR","mob":"7984325174","model":"SYMPHONY JUMBO 45DB","baki":9000,"mark":"SAGA","type":"CASH","days":309},{"id":"c89","date":"10.05.2025","name":"Rajbha Sindhav","adrs":"PATANA","mob":"8155009817","model":"OPPO A3X 5G 4/128 BLACK","baki":2000,"mark":"SAGA","type":"GPAY","days":303},{"id":"c90","date":"24.05.2025","name":"Ketan Khambhayata","adrs":"DHASA GAM","mob":"9638011665","model":"SAMSUNG F15 5G 6/128GB BLACK","baki":13500,"mark":"GREEN","type":"CASH","days":289},{"id":"c91","date":"25.05.2025","name":"Khodiyar Kirana-Sanjaybhai","adrs":"DHASA GAM","mob":"9979593759","model":"SYMPHONY HI FLO 27","baki":6000,"mark":"SAGA","type":"GPAY","days":288},{"id":"c92","date":"04.06.2025","name":"Rupaliben Gohil","adrs":"MANDVA","mob":"7203917455","model":"OPPO A5X 5G 4/128GB","baki":650,"mark":"GREEN","type":"BAJAJ","days":278},{"id":"c93","date":"16.06.2025","name":"Nayanaben Bhaveshbhai Jadav","adrs":"DHASA GAM","mob":"9537444576","model":"SAMSUNG F15 5G 4/128G BLACK","baki":1250,"mark":"GREEN","type":"BAJAJ","days":266},{"id":"c94","date":"09.07.2025","name":"Altafbhai Gulubhai Seta","adrs":"DHASA GAM","mob":"9979184117","model":"LG GL-C322KPZY","baki":12000,"mark":"GREEN","type":"BAJAJ","days":243},{"id":"c95","date":"11.08.2025","name":"Maheshbhai Chhaganbhai Makwana","adrs":"DHASA GAM","mob":"9664834406","model":"KEL KRD-F200EBPHGS","baki":3000,"mark":"GREEN","type":"CREDIT","days":210},{"id":"c96","date":"18.08.2025","name":"Altafbhai Pathan","adrs":"DHASA GAM","mob":"6351991925","model":"AMSTRAD AMWS75VR","baki":2000,"mark":"GREEN","type":"CREDIT","days":203},{"id":"c97","date":"23.08.2025","name":"Mukeshbhai Kher","adrs":"BHANDARIYA","mob":"9773085589","model":"OPPO F29 PRO 5G 8/256","baki":4000,"mark":"GREEN","type":"CREDIT","days":198},{"id":"c98","date":"27.08.2025","name":"Valjibhai Vajabhai Parmar","adrs":"DHASA GAM","mob":"9825995889","model":"OPPO A5X 6/128GB BLUE","baki":15000,"mark":"GREEN","type":"CREDIT","days":194},{"id":"c99","date":"02.10.2025","name":"Jahidbhai Rajakbhai Multani","adrs":"DHASA JN","mob":"9081307648","model":"LG GL-D241APZU","baki":1000,"mark":"GREEN","type":"BAJAJ","days":158},{"id":"c100","date":"25.10.2025","name":"Lilaben Nathabhai Parmar","adrs":"DHASA GAM","mob":"9537801046","model":"GODREJ REF EONCRYSTAL 208B","baki":8500,"mark":"GREEN","type":"BAJAJ","days":135},{"id":"c101","date":"12.12.2025","name":"Rameshbhai Devjibhai Solanki","adrs":"DHASA GAM","mob":"9426989689","model":"GODREJ EMARVEL 207C TDF FU BL","baki":7000,"mark":"GREEN","type":"CREDIT","days":87},{"id":"c102","date":"13.12.2025","name":"Dhavalkumar Narbherambhai Solanki","adrs":"DHASA GAM","mob":"9879473346","model":"SAMSUNG A17 5G 6/128GB GRAY","baki":1400,"mark":"GREEN","type":"DMI","days":86},{"id":"c103","date":"26.12.2025","name":"Vikrambhai Labhubhai Kher","adrs":"ANIDA","mob":"9727282980","model":"OPPO F31 8/128GB BLUE","baki":15000,"mark":"GREEN","type":"BAJAJ","days":73},{"id":"c104","date":"29.12.2025","name":"Rameshbhai Kanjibhai Solanki","adrs":"MANDVA","mob":"7434954731","model":"OPPO A5X 5G 4/128GB BLUE","baki":9500,"mark":"GREEN","type":"CREDIT","days":70},{"id":"c105","date":"29.12.2025","name":"Dharmendrasing","adrs":"PATANA","mob":"9720642395","model":"AMSTRAD AM32HGQ9A","baki":14000,"mark":"GREEN","type":"CREDIT","days":70},{"id":"c106","date":"06.01.2026","name":"Bhikhubhai Bahadurbhai Khachar","adrs":"PATANA","mob":"9924003444","model":"WM","baki":22000,"mark":"GREEN","type":"PINELABS","days":62}];
+
+// ====== STATE ======
+let custs = {};
+let activities = [];
+let sortBy = 'days';
+let fil = 'ALL';
+let curCust = null;
+let curStaff = sessionStorage.getItem('staff') || null;
+let seeded = false;
+
+// ====== SYNC STATUS ======
+function setSyncStatus(s){
+  const dot = document.getElementById('syncDot');
+  if(!dot) return;
+  dot.className = 'sync-dot ' + s;
+}
+
+// ====== STAFF LOGIN ======
+window.loginStaff = function(name){
+  sessionStorage.setItem('staff', name);
+  curStaff = name;
+  document.getElementById('staffScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  document.getElementById('staffName').textContent = name;
+  startApp();
+};
+
+// ====== FIREBASE LISTENERS ======
+function startApp(){
+  setSyncStatus('syncing');
+
+  // Listen to customers
+  onValue(ref(db, 'customers'), (snap) => {
+    const data = snap.val();
+    if(!data){
+      // First time — seed data
+      if(!seeded){
+        seeded = true;
+        const batch = {};
+        SEED.forEach(c => { batch[c.id] = {...c, paid: false}; });
+        set(ref(db, 'customers'), batch);
+      }
+      custs = {};
+    } else {
+      custs = data;
+    }
+    setSyncStatus('online');
+    renderAll();
+    document.getElementById('loader').classList.add('hide');
+  });
+
+  // Listen to activity log
+  onValue(ref(db, 'activity'), (snap) => {
+    const data = snap.val();
+    activities = data ? Object.values(data).sort((a,b) => (b.ts||0)-(a.ts||0)).slice(0,50) : [];
+    renderActivity();
+  });
+}
+
+// ====== RENDER ======
+function dBadge(d){if(d>=365)return`<span class="badge br">🔴 ${d}d</span>`;if(d>=90)return`<span class="badge bo">🟡 ${d}d</span>`;if(d>=30)return`<span class="badge bb">🔵 ${d}d</span>`;return`<span class="badge bg">🟢 ${d}d</span>`;}
+
+// Calculate days from date string (DD.MM.YYYY) in real-time
+function calcDays(c){
+  try{
+    const dateStr = c.date||'';
+    if(!dateStr) return c.days||0;
+    const parts = dateStr.split('.');
+    if(parts.length===3){
+      const d = new Date(
+        parseInt(parts[2]),
+        parseInt(parts[1])-1,
+        parseInt(parts[0])
+      );
+      const days = Math.floor((new Date()-d)/(1000*60*60*24));
+      return days>0?days:0;
+    }
+    return c.days||0;
+  }catch{return c.days||0;}
+}
+function mBadge(m){const mc={RED:'br',GREEN:'bg',SAGA:'bb',SANJAY:'bo',WOFF:'bx',SHORUM:'bb',ARJUN:'bg'};return`<span class="badge ${mc[m]||'bx'}">${m}</span>`;}
+function fmtAmt(n){return '₹'+n.toLocaleString('en-IN');}
+
+function renderStats(){
+  const list = Object.values(custs).filter(c=>!c.paid);
+  const tot = list.reduce((s,c)=>s+c.baki,0);
+  document.getElementById('statRow').innerHTML=`
+    <div class="stat"><span class="stat-val" style="color:var(--accent)">${fmtAmt(tot)}</span><span class="stat-lbl">કુલ ઉધાર</span></div>
+    <div class="stat"><span class="stat-val">${list.length}</span><span class="stat-lbl">ગ્રાહક</span></div>
+    <div class="stat"><span class="stat-val" style="color:var(--red)">${list.filter(c=>calcDays(c)>=365).length}</span><span class="stat-lbl">⚠️ 1yr+</span></div>
+    <div class="stat"><span class="stat-val" style="color:var(--accent)">${list.filter(c=>calcDays(c)>=90&&calcDays(c)<365).length}</span><span class="stat-lbl">90d+</span></div>`;
+}
+
+function renderTabs(){
+  const DEPTS = ['ALL','LG','HERO','WORKSHOP'];
+  const active = Object.values(custs).filter(c=>!c.paid);
+  document.getElementById('tabsRow').innerHTML = DEPTS.map(d=>{
+    const count = d==='ALL' ? active.length : active.filter(c=>c.dept===d).length;
+    return `<div class="tab ${d===fil?'active':''}" onclick="window.setFil('${d}')">${d==='ALL'?'🏠 બધા':d==='LG'?'📺 LG':d==='HERO'?'🏍️ HERO':'🔧 WORKSHOP'} <span style="font-size:10px;opacity:.8">(${count})</span></div>`;
+  }).join('');
+}
+
+window.renderList = function(){
+  const q = document.getElementById('srch').value.toLowerCase();
+  let list = Object.values(custs).filter(c=>{
+    if(c.paid) return false;
+    if(fil!=='ALL' && c.dept!==fil) return false;
+    if(q) return (c.name+c.adrs+c.model+c.mob).toLowerCase().includes(q);
+    return true;
+  });
+  list.sort((a,b)=>sortBy==='days'?calcDays(b)-calcDays(a):sortBy==='baki'?b.baki-a.baki:a.name.localeCompare(b.name));
+  const tot = list.reduce((s,c)=>s+c.baki,0);
+  document.getElementById('rcount').textContent = list.length+' records · '+fmtAmt(tot);
+  if(!list.length){document.getElementById('listWrap').innerHTML='<div class="empty"><div style="font-size:48px">🎉</div><p>કોઈ ઉધાર નથી!</p></div>';return;}
+  document.getElementById('listWrap').innerHTML = list.map(c=>{
+    const days = calcDays(c);
+    return`
+    <div class="card ${days>=365?'urgent':days>=90?'warn':''}">
+      <div class="card-top">
+        <div class="card-row1"><div class="c-name">${c.name}</div><div class="c-amount">${fmtAmt(c.baki)}</div></div>
+        <div class="c-meta">${dBadge(days)}${mBadge(c.mark)}<span class="badge bx">${c.type}</span>${c.dept?`<span class="badge" style="background:rgba(26,140,255,.15);color:var(--blue);border:1px solid rgba(26,140,255,.3)">${c.dept}</span>`:''}<span class="badge bx">📍${c.adrs}</span></div>
+        <div class="c-model">📦 ${c.model} · 📅 ${c.date} · 📞 ${c.mob}</div>
+      </div>
+      <div class="card-actions">
+        <button class="act-btn act-wa" onclick="window.openWA('${c.id}')">💬 <span>WhatsApp</span></button>
+        <button class="act-btn act-call" onclick="window.doCall('${c.mob}')">📞 <span>Call</span></button>
+        <button class="act-btn" style="color:var(--blue)" onclick="window.openEdit('${c.id}')">✏️ <span>Edit</span></button>
+        <button class="act-btn act-done" onclick="window.openPaid('${c.id}')">✅ <span>ચૂક્યો</span></button>
+      </div>
+    </div>`}).join('');
+};
+
+function renderActivity(){
+  const el = document.getElementById('activityList');
+  if(!activities.length){el.innerHTML='<div class="empty"><div style="font-size:36px">📭</div><p>કોઈ activity નથી</p></div>';return;}
+  el.innerHTML = activities.map(a=>`
+    <div class="activity-item">
+      <div class="act-icon">${a.icon||'📝'}</div>
+      <div class="act-info">
+        <div class="act-title">${a.msg}</div>
+        <div class="act-sub">👤 ${a.staff} · ${a.time}</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderAll(){renderStats();renderTabs();renderList();}
+
+// ====== LOG ACTIVITY ======
+function logActivity(icon, msg){
+  const now = new Date();
+  const time = now.toLocaleString('gu-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  push(ref(db,'activity'),{icon,msg,staff:curStaff,time,ts:Date.now()});
+}
+
+// ====== WHATSAPP ======
+window.openWA = function(id){
+  curCust = custs[id]; if(!curCust) return;
+  document.getElementById('waName').textContent = '💬 '+curCust.name;
+  document.getElementById('waSub').textContent = fmtAmt(curCust.baki)+' · '+curCust.adrs+' · '+calcDays(curCust)+' days';
+  prevMsg();
+  document.getElementById('waOvr').classList.add('show');
+  document.body.style.overflow='hidden';
+};
+window.closeWA = function(e){if(!e||e.target===document.getElementById('waOvr')){document.getElementById('waOvr').classList.remove('show');document.body.style.overflow='';}};
+window.prevMsg = function(){
+  if(!curCust) return;
+  const t = document.getElementById('msgTpl').value;
+  const m = t.replace(/{NAME}/g,curCust.name).replace(/{BAKI}/g,fmtAmt(curCust.baki)).replace(/{MODEL}/g,curCust.model).replace(/{ADRS}/g,curCust.adrs);
+  document.getElementById('prev').textContent = m;
+  let mob = curCust.mob; if(mob.length===10) mob='91'+mob;
+  document.getElementById('waBtn').onclick = ()=>{
+    window.open('https://wa.me/'+mob+'?text='+encodeURIComponent(m),'_blank');
+    closeWA();
+    logActivity('💬','WhatsApp: '+curCust.name+' ને message');
+    toast('💬 WhatsApp ખોલ્યો!');
+  };
+};
+window.ins = function(v){const ta=document.getElementById('msgTpl');const s=ta.selectionStart;ta.value=ta.value.slice(0,s)+v+ta.value.slice(ta.selectionEnd);ta.selectionStart=ta.selectionEnd=s+v.length;ta.focus();prevMsg();};
+
+// ====== CALL ======
+window.doCall = function(mob){
+  let m=mob.replace(/\D/g,''); if(m.length===10)m='91'+m;
+  window.location.href='tel:+'+m;
+  if(curCust) logActivity('📞','Call: '+curCust.name);
+  toast('📞 Calling...');
+};
+
+// ====== PAID ======
+window.openPaid = function(id){
+  curCust = custs[id]; if(!curCust) return;
+  document.getElementById('paidName').textContent = '✅ '+curCust.name;
+  document.getElementById('paidSub').textContent = 'બાકી: '+fmtAmt(curCust.baki);
+  document.getElementById('paidAmt').value = '';
+  document.getElementById('paidNote').value = '';
+  document.getElementById('paidOvr').classList.add('show');
+  document.body.style.overflow='hidden';
+};
+window.closePaid = function(e){if(!e||e.target===document.getElementById('paidOvr')){document.getElementById('paidOvr').classList.remove('show');document.body.style.overflow='';}};
+window.confirmPaid = async function(){
+  if(!curCust) return;
+  const paid = parseFloat(document.getElementById('paidAmt').value)||0;
+  const note = document.getElementById('paidNote').value.trim();
+  const newBaki = paid > 0 ? Math.max(0, curCust.baki - paid) : 0;
+  setSyncStatus('syncing');
+  if(newBaki <= 0){
+    await update(ref(db,'customers/'+curCust.id),{paid:true, baki:0});
+    logActivity('✅',curCust.name+' — ₹'+curCust.baki.toLocaleString('en-IN')+' પૂરા ચૂક્ત્યા'+(note?' ('+note+')':''));
+    toast('✅ Fully Paid! 🎉');
+  } else {
+    await update(ref(db,'customers/'+curCust.id),{baki: newBaki});
+    logActivity('💸',curCust.name+' — ₹'+paid.toLocaleString('en-IN')+' મળ્યા, બાકી ₹'+newBaki.toLocaleString('en-IN')+(note?' ('+note+')':''));
+    toast('💸 ₹'+paid.toLocaleString('en-IN')+' ચૂક્ત્યા!');
+  }
+  closePaid();
+};
+
+// ====== ADD CUSTOMER ======
+window.openAdd = function(){document.getElementById('addOvr').classList.add('show');document.body.style.overflow='hidden';};
+window.closeAdd = function(e){if(!e||e.target===document.getElementById('addOvr')){document.getElementById('addOvr').classList.remove('show');document.body.style.overflow='';}};
+window.addCust = async function(){
+  const dept = document.getElementById('aDept').value;
+  const name = document.getElementById('aN').value.trim().toUpperCase();
+  const phone = document.getElementById('aP').value.trim().replace(/\D/g,'');
+  const baki = parseInt(document.getElementById('aB').value)||0;
+  const adrs = (document.getElementById('aA').value.trim()||'').toUpperCase();
+  const model = document.getElementById('aM').value.trim().toUpperCase();
+  const dateRaw = document.getElementById('aD').value.trim();
+  const date = dateRaw || new Date().toLocaleDateString('en-GB').replace(/\//g,'.');
+
+  // Calculate days from purchase date
+  let days = 0;
+  if(dateRaw){
+    try{
+      const parts = dateRaw.includes('.')? dateRaw.split('.') : dateRaw.split('/');
+      const d = parts.length===3 ? new Date(parts[2], parts[1]-1, parts[0]) : new Date(dateRaw);
+      days = Math.floor((new Date() - d)/(1000*60*60*24));
+      if(days<0) days=0;
+    }catch{}
+  }
+
+  if(!dept){toast('⚠️ Department select કરો!','#ff4757');return;}
+  if(!name){toast('⚠️ નામ ખૂટે','#ff4757');return;}
+  if(phone.length<10){toast('⚠️ ફોન ખૂટે','#ff4757');return;}
+  if(baki<=0){toast('⚠️ રકમ ખૂટે','#ff4757');return;}
+  if(!dateRaw){toast('⚠️ તારીખ ખૂટે','#ff4757');return;}
+
+  const id = 'c'+Date.now();
+  setSyncStatus('syncing');
+  await set(ref(db,'customers/'+id),{id,date,name,adrs,mob:phone,model,baki,dept,mark:'GREEN',type:'CASH',days,paid:false});
+  logActivity('➕',name+' — '+fmtAmt(baki)+' ('+dept+') નવો ગ્રાહક ઉમેર્યો');
+  toast('✅ ઉમેર્યો! બધાને sync થઈ ગયો!');
+  closeAdd();
+  ['aN','aP','aB','aA','aM','aD'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('aDept').value='';
+};
+
+// ====== EDIT CUSTOMER ======
+window.openEdit = function(id){
+  curCust = custs[id]; if(!curCust) return;
+  document.getElementById('editTitle').textContent = '✏️ '+curCust.name;
+  document.getElementById('eDept').value = curCust.dept||'';
+  document.getElementById('eN').value = curCust.name||'';
+  document.getElementById('eP').value = curCust.mob||'';
+  document.getElementById('eB').value = curCust.baki||'';
+  document.getElementById('eA').value = curCust.adrs||'';
+  document.getElementById('eM').value = curCust.model||'';
+  document.getElementById('eD').value = curCust.date||'';
+  document.getElementById('editOvr').classList.add('show');
+  document.body.style.overflow='hidden';
+};
+window.closeEdit = function(e){if(!e||e.target===document.getElementById('editOvr')){document.getElementById('editOvr').classList.remove('show');document.body.style.overflow='';}};
+window.saveEdit = async function(){
+  if(!curCust) return;
+  const dept = document.getElementById('eDept').value;
+  const name = document.getElementById('eN').value.trim().toUpperCase();
+  const mob = document.getElementById('eP').value.trim().replace(/\D/g,'');
+  const baki = parseInt(document.getElementById('eB').value)||curCust.baki;
+  const adrs = (document.getElementById('eA').value.trim()||'').toUpperCase();
+  const model = document.getElementById('eM').value.trim().toUpperCase();
+  const dateRaw = document.getElementById('eD').value.trim();
+
+  // Recalculate days from date
+  let days = curCust.days||0;
+  if(dateRaw){
+    try{
+      const parts = dateRaw.split('.');
+      if(parts.length===3){
+        const d = new Date(parts[2], parts[1]-1, parts[0]);
+        days = Math.floor((new Date()-d)/(1000*60*60*24));
+        if(days<0) days=0;
+      }
+    }catch{}
+  }
+
+  setSyncStatus('syncing');
+  await update(ref(db,'customers/'+curCust.id),{
+    name: name||curCust.name,
+    mob: mob.length>=10?mob:curCust.mob,
+    baki, adrs, model,
+    date: dateRaw||curCust.date,
+    dept: dept||curCust.dept||'',
+    days
+  });
+  logActivity('✏️','Edit: '+curCust.name+(name!==curCust.name?' → '+name:''));
+  toast('✅ Update થઈ ગયું!');
+  closeEdit();
+};
+
+// ====== SORT / FILTER ======
+window.setSort = function(s,el){sortBy=s;document.querySelectorAll('.sort-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');renderList();};
+window.setFil = function(f){fil=f;renderList();renderTabs();};
+
+// ====== VIEW SWITCH ======
+window.switchView = function(n){
+  document.querySelectorAll('.view').forEach((v,i)=>v.classList.toggle('active',i===n));
+  document.querySelectorAll('.bnav').forEach((b,i)=>b.classList.toggle('active',i===n));
+};
+
+// ====== TOAST ======
+window.toast = function(msg,color){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.background=color||'var(--green)';t.style.color=color?'#fff':'#000';
+  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);
+};
+
+// ====== PWA INSTALL ======
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBtn').style.display = 'flex';
+});
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBtn').style.display = 'none';
+  toast('🎉 App Install થઈ ગઈ!');
+});
+window.installApp = function(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(r => {
+      if(r.outcome==='accepted') toast('🎉 App Install થઈ ગઈ!');
+      deferredPrompt = null;
+    });
+  }
+};
+
+// ====== SERVICE WORKER ======
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js')
+    .then(r => console.log('SW registered'))
+    .catch(e => console.log('SW skip:', e));
+}
+
+// ====== INIT ======
+document.getElementById('loader').classList.remove('hide');
+if(curStaff){
+  document.getElementById('staffScreen').style.display='none';
+  document.getElementById('mainApp').style.display='block';
+  document.getElementById('staffName').textContent=curStaff;
+  startApp();
+} else {
+  document.getElementById('loader').classList.add('hide');
+  document.getElementById('staffScreen').style.display='flex';
+}
+
+</script>
+</body>
+</html>
