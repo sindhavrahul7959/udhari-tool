@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="gu">
 <head>
@@ -152,9 +153,9 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
   <div style="font-size:52px">🏪</div>
   <h2>જય ખોડીયાર શો રૂમ</h2>
   <p>તમે કોણ છો? Select કરો</p>
-  <button class="staff-btn" onclick="loginStaff('👑 Owner')"><span class="staff-icon">👑</span> Owner</button>
-  <button class="staff-btn" onclick="loginStaff('👤 Staff 1')"><span class="staff-icon">👤</span> Staff 1</button>
-  <button class="staff-btn" onclick="loginStaff('👤 Staff 2')"><span class="staff-icon">👤</span> Staff 2</button>
+  <button class="staff-btn" onclick="loginStaff('SANJAY')"><span class="staff-icon">👤</span> SANJAY</button>
+  <button class="staff-btn" onclick="loginStaff('RAHUL')"><span class="staff-icon">👤</span> RAHUL</button>
+  <button class="staff-btn" onclick="loginStaff('ARJUN')"><span class="staff-icon">👤</span> ARJUN</button>
 </div>
 
 <!-- MAIN APP -->
@@ -259,17 +260,55 @@ MO. 8160323142</textarea>
     <div class="sheet-handle"></div>
     <div class="sheet-head"><h3>➕ નવો ગ્રાહક</h3><p>ઉધારી record ઉમેરો</p></div>
     <div style="height:14px"></div>
-    <div class="form-group"><label>ગ્રાહક નામ *</label><input id="aN" placeholder="નામ..."></div>
+    <div class="form-group"><label>Department *</label>
+      <select id="aDept" style="width:100%;padding:11px 13px;background:var(--s2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;outline:none">
+        <option value="">-- Select --</option>
+        <option value="LG">📺 LG</option>
+        <option value="HERO">🏍️ HERO</option>
+        <option value="WORKSHOP">🔧 WORKSHOP</option>
+      </select>
+    </div>
+    <div class="form-group"><label>ગ્રાહક નામ *</label><input id="aN" placeholder="નામ..." oninput="this.value=this.value.toUpperCase()"></div>
     <div class="form-group"><label>Mobile *</label><input id="aP" type="tel" placeholder="9876543210"></div>
     <div class="fg2">
       <div><label>ઉધાર ₹ *</label><input id="aB" type="number" placeholder="0"></div>
-      <div><label>ગામ</label><input id="aA" placeholder="ગામ"></div>
+      <div><label>ગામ</label><input id="aA" placeholder="ગામ" oninput="this.value=this.value.toUpperCase()"></div>
     </div>
-    <div class="form-group"><label>Model/Product</label><input id="aM" placeholder="Model..."></div>
-    <div class="form-group"><label>ખરીદ તારીખ</label><input id="aD" placeholder="DD.MM.YYYY"></div>
+    <div class="form-group"><label>Model/Product</label><input id="aM" placeholder="Model..." oninput="this.value=this.value.toUpperCase()"></div>
+    <div class="form-group"><label>ખરીદ તારીખ * (DD.MM.YYYY)</label><input id="aD" placeholder="DD.MM.YYYY"></div>
     <div class="sheet-btns">
       <button class="sbtn sbtn-cancel" onclick="closeAdd()">✕</button>
       <button class="sbtn" style="background:linear-gradient(135deg,#e8522a,var(--accent));color:#fff" onclick="addCust()">✅ Save</button>
+    </div>
+    <div style="height:20px"></div>
+  </div>
+</div>
+
+<!-- EDIT OVERLAY -->
+<div class="overlay" id="editOvr" onclick="closeEdit(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head"><h3 id="editTitle">✏️ Edit Customer</h3></div>
+    <div style="height:12px"></div>
+    <div class="form-group"><label>Department</label>
+      <select id="eDept" style="width:100%;padding:11px 13px;background:var(--s2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;outline:none">
+        <option value="">-- Select --</option>
+        <option value="LG">📺 LG</option>
+        <option value="HERO">🏍️ HERO</option>
+        <option value="WORKSHOP">🔧 WORKSHOP</option>
+      </select>
+    </div>
+    <div class="form-group"><label>ગ્રાહક નામ</label><input id="eN" placeholder="નામ..." oninput="this.value=this.value.toUpperCase()"></div>
+    <div class="form-group"><label>Mobile</label><input id="eP" type="tel" placeholder="9876543210"></div>
+    <div class="fg2">
+      <div><label>ઉધાર ₹</label><input id="eB" type="number" placeholder="0"></div>
+      <div><label>ગામ</label><input id="eA" placeholder="ગામ"></div>
+    </div>
+    <div class="form-group"><label>Model/Product</label><input id="eM" placeholder="Model..."></div>
+    <div class="form-group"><label>ખરીદ તારીખ (DD.MM.YYYY)</label><input id="eD" placeholder="DD.MM.YYYY"></div>
+    <div class="sheet-btns">
+      <button class="sbtn sbtn-cancel" onclick="closeEdit()">✕</button>
+      <button class="sbtn" style="background:var(--blue);color:#fff" onclick="saveEdit()">✅ Save</button>
     </div>
     <div style="height:20px"></div>
   </div>
@@ -359,6 +398,25 @@ function startApp(){
 
 // ====== RENDER ======
 function dBadge(d){if(d>=365)return`<span class="badge br">🔴 ${d}d</span>`;if(d>=90)return`<span class="badge bo">🟡 ${d}d</span>`;if(d>=30)return`<span class="badge bb">🔵 ${d}d</span>`;return`<span class="badge bg">🟢 ${d}d</span>`;}
+
+// Calculate days from date string (DD.MM.YYYY) in real-time
+function calcDays(c){
+  try{
+    const dateStr = c.date||'';
+    if(!dateStr) return c.days||0;
+    const parts = dateStr.split('.');
+    if(parts.length===3){
+      const d = new Date(
+        parseInt(parts[2]),
+        parseInt(parts[1])-1,
+        parseInt(parts[0])
+      );
+      const days = Math.floor((new Date()-d)/(1000*60*60*24));
+      return days>0?days:0;
+    }
+    return c.days||0;
+  }catch{return c.days||0;}
+}
 function mBadge(m){const mc={RED:'br',GREEN:'bg',SAGA:'bb',SANJAY:'bo',WOFF:'bx',SHORUM:'bb',ARJUN:'bg'};return`<span class="badge ${mc[m]||'bx'}">${m}</span>`;}
 function fmtAmt(n){return '₹'+n.toLocaleString('en-IN');}
 
@@ -368,43 +426,47 @@ function renderStats(){
   document.getElementById('statRow').innerHTML=`
     <div class="stat"><span class="stat-val" style="color:var(--accent)">${fmtAmt(tot)}</span><span class="stat-lbl">કુલ ઉધાર</span></div>
     <div class="stat"><span class="stat-val">${list.length}</span><span class="stat-lbl">ગ્રાહક</span></div>
-    <div class="stat"><span class="stat-val" style="color:var(--red)">${list.filter(c=>c.days>=365).length}</span><span class="stat-lbl">⚠️ 1yr+</span></div>
-    <div class="stat"><span class="stat-val" style="color:var(--accent)">${list.filter(c=>c.days>=90&&c.days<365).length}</span><span class="stat-lbl">90d+</span></div>`;
+    <div class="stat"><span class="stat-val" style="color:var(--red)">${list.filter(c=>calcDays(c)>=365).length}</span><span class="stat-lbl">⚠️ 1yr+</span></div>
+    <div class="stat"><span class="stat-val" style="color:var(--accent)">${list.filter(c=>calcDays(c)>=90&&calcDays(c)<365).length}</span><span class="stat-lbl">90d+</span></div>`;
 }
 
 function renderTabs(){
+  const DEPTS = ['ALL','LG','HERO','WORKSHOP'];
   const active = Object.values(custs).filter(c=>!c.paid);
-  const locs = ['ALL', ...[...new Set(active.map(c=>c.adrs).filter(Boolean))].sort()];
-  document.getElementById('tabsRow').innerHTML = locs.map(l=>
-    `<div class="tab ${l===fil?'active':''}" onclick="window.setFil('${l}')">${l==='ALL'?'🏠 બધા':l}</div>`
-  ).join('');
+  document.getElementById('tabsRow').innerHTML = DEPTS.map(d=>{
+    const count = d==='ALL' ? active.length : active.filter(c=>c.dept===d).length;
+    return `<div class="tab ${d===fil?'active':''}" onclick="window.setFil('${d}')">${d==='ALL'?'🏠 બધા':d==='LG'?'📺 LG':d==='HERO'?'🏍️ HERO':'🔧 WORKSHOP'} <span style="font-size:10px;opacity:.8">(${count})</span></div>`;
+  }).join('');
 }
 
 window.renderList = function(){
   const q = document.getElementById('srch').value.toLowerCase();
   let list = Object.values(custs).filter(c=>{
     if(c.paid) return false;
-    if(fil!=='ALL' && c.adrs!==fil) return false;
+    if(fil!=='ALL' && c.dept!==fil) return false;
     if(q) return (c.name+c.adrs+c.model+c.mob).toLowerCase().includes(q);
     return true;
   });
-  list.sort((a,b)=>sortBy==='days'?b.days-a.days:sortBy==='baki'?b.baki-a.baki:a.name.localeCompare(b.name));
+  list.sort((a,b)=>sortBy==='days'?calcDays(b)-calcDays(a):sortBy==='baki'?b.baki-a.baki:a.name.localeCompare(b.name));
   const tot = list.reduce((s,c)=>s+c.baki,0);
   document.getElementById('rcount').textContent = list.length+' records · '+fmtAmt(tot);
   if(!list.length){document.getElementById('listWrap').innerHTML='<div class="empty"><div style="font-size:48px">🎉</div><p>કોઈ ઉધાર નથી!</p></div>';return;}
-  document.getElementById('listWrap').innerHTML = list.map(c=>`
-    <div class="card ${c.days>=365?'urgent':c.days>=90?'warn':''}">
+  document.getElementById('listWrap').innerHTML = list.map(c=>{
+    const days = calcDays(c);
+    return`
+    <div class="card ${days>=365?'urgent':days>=90?'warn':''}">
       <div class="card-top">
         <div class="card-row1"><div class="c-name">${c.name}</div><div class="c-amount">${fmtAmt(c.baki)}</div></div>
-        <div class="c-meta">${dBadge(c.days)}${mBadge(c.mark)}<span class="badge bx">${c.type}</span><span class="badge bx">📍${c.adrs}</span></div>
+        <div class="c-meta">${dBadge(days)}${mBadge(c.mark)}<span class="badge bx">${c.type}</span>${c.dept?`<span class="badge" style="background:rgba(26,140,255,.15);color:var(--blue);border:1px solid rgba(26,140,255,.3)">${c.dept}</span>`:''}<span class="badge bx">📍${c.adrs}</span></div>
         <div class="c-model">📦 ${c.model} · 📅 ${c.date} · 📞 ${c.mob}</div>
       </div>
       <div class="card-actions">
         <button class="act-btn act-wa" onclick="window.openWA('${c.id}')">💬 <span>WhatsApp</span></button>
         <button class="act-btn act-call" onclick="window.doCall('${c.mob}')">📞 <span>Call</span></button>
+        <button class="act-btn" style="color:var(--blue)" onclick="window.openEdit('${c.id}')">✏️ <span>Edit</span></button>
         <button class="act-btn act-done" onclick="window.openPaid('${c.id}')">✅ <span>ચૂક્યો</span></button>
       </div>
-    </div>`).join('');
+    </div>`}).join('');
 };
 
 function renderActivity(){
@@ -433,7 +495,7 @@ function logActivity(icon, msg){
 window.openWA = function(id){
   curCust = custs[id]; if(!curCust) return;
   document.getElementById('waName').textContent = '💬 '+curCust.name;
-  document.getElementById('waSub').textContent = fmtAmt(curCust.baki)+' · '+curCust.adrs+' · '+curCust.days+' days';
+  document.getElementById('waSub').textContent = fmtAmt(curCust.baki)+' · '+curCust.adrs+' · '+calcDays(curCust)+' days';
   prevMsg();
   document.getElementById('waOvr').classList.add('show');
   document.body.style.overflow='hidden';
@@ -495,22 +557,92 @@ window.confirmPaid = async function(){
 window.openAdd = function(){document.getElementById('addOvr').classList.add('show');document.body.style.overflow='hidden';};
 window.closeAdd = function(e){if(!e||e.target===document.getElementById('addOvr')){document.getElementById('addOvr').classList.remove('show');document.body.style.overflow='';}};
 window.addCust = async function(){
-  const name = document.getElementById('aN').value.trim();
+  const dept = document.getElementById('aDept').value;
+  const name = document.getElementById('aN').value.trim().toUpperCase();
   const phone = document.getElementById('aP').value.trim().replace(/\D/g,'');
   const baki = parseInt(document.getElementById('aB').value)||0;
   const adrs = (document.getElementById('aA').value.trim()||'').toUpperCase();
-  const model = document.getElementById('aM').value.trim();
-  const date = document.getElementById('aD').value.trim() || new Date().toLocaleDateString('en-GB').replace(/\//g,'.');
+  const model = document.getElementById('aM').value.trim().toUpperCase();
+  const dateRaw = document.getElementById('aD').value.trim();
+  const date = dateRaw || new Date().toLocaleDateString('en-GB').replace(/\//g,'.');
+
+  // Calculate days from purchase date
+  let days = 0;
+  if(dateRaw){
+    try{
+      const parts = dateRaw.includes('.')? dateRaw.split('.') : dateRaw.split('/');
+      const d = parts.length===3 ? new Date(parts[2], parts[1]-1, parts[0]) : new Date(dateRaw);
+      days = Math.floor((new Date() - d)/(1000*60*60*24));
+      if(days<0) days=0;
+    }catch{}
+  }
+
+  if(!dept){toast('⚠️ Department select કરો!','#ff4757');return;}
   if(!name){toast('⚠️ નામ ખૂટે','#ff4757');return;}
   if(phone.length<10){toast('⚠️ ફોન ખૂટે','#ff4757');return;}
   if(baki<=0){toast('⚠️ રકમ ખૂટે','#ff4757');return;}
+  if(!dateRaw){toast('⚠️ તારીખ ખૂટે','#ff4757');return;}
+
   const id = 'c'+Date.now();
   setSyncStatus('syncing');
-  await set(ref(db,'customers/'+id),{id,date,name,adrs,mob:phone,model,baki,mark:'GREEN',type:'CASH',days:0,paid:false});
-  logActivity('➕',name+' — '+fmtAmt(baki)+' નવો ગ્રાહક ઉમેર્યો');
+  await set(ref(db,'customers/'+id),{id,date,name,adrs,mob:phone,model,baki,dept,mark:'GREEN',type:'CASH',days,paid:false});
+  logActivity('➕',name+' — '+fmtAmt(baki)+' ('+dept+') નવો ગ્રાહક ઉમેર્યો');
   toast('✅ ઉમેર્યો! બધાને sync થઈ ગયો!');
   closeAdd();
   ['aN','aP','aB','aA','aM','aD'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('aDept').value='';
+};
+
+// ====== EDIT CUSTOMER ======
+window.openEdit = function(id){
+  curCust = custs[id]; if(!curCust) return;
+  document.getElementById('editTitle').textContent = '✏️ '+curCust.name;
+  document.getElementById('eDept').value = curCust.dept||'';
+  document.getElementById('eN').value = curCust.name||'';
+  document.getElementById('eP').value = curCust.mob||'';
+  document.getElementById('eB').value = curCust.baki||'';
+  document.getElementById('eA').value = curCust.adrs||'';
+  document.getElementById('eM').value = curCust.model||'';
+  document.getElementById('eD').value = curCust.date||'';
+  document.getElementById('editOvr').classList.add('show');
+  document.body.style.overflow='hidden';
+};
+window.closeEdit = function(e){if(!e||e.target===document.getElementById('editOvr')){document.getElementById('editOvr').classList.remove('show');document.body.style.overflow='';}};
+window.saveEdit = async function(){
+  if(!curCust) return;
+  const dept = document.getElementById('eDept').value;
+  const name = document.getElementById('eN').value.trim().toUpperCase();
+  const mob = document.getElementById('eP').value.trim().replace(/\D/g,'');
+  const baki = parseInt(document.getElementById('eB').value)||curCust.baki;
+  const adrs = (document.getElementById('eA').value.trim()||'').toUpperCase();
+  const model = document.getElementById('eM').value.trim().toUpperCase();
+  const dateRaw = document.getElementById('eD').value.trim();
+
+  // Recalculate days from date
+  let days = curCust.days||0;
+  if(dateRaw){
+    try{
+      const parts = dateRaw.split('.');
+      if(parts.length===3){
+        const d = new Date(parts[2], parts[1]-1, parts[0]);
+        days = Math.floor((new Date()-d)/(1000*60*60*24));
+        if(days<0) days=0;
+      }
+    }catch{}
+  }
+
+  setSyncStatus('syncing');
+  await update(ref(db,'customers/'+curCust.id),{
+    name: name||curCust.name,
+    mob: mob.length>=10?mob:curCust.mob,
+    baki, adrs, model,
+    date: dateRaw||curCust.date,
+    dept: dept||curCust.dept||'',
+    days
+  });
+  logActivity('✏️','Edit: '+curCust.name+(name!==curCust.name?' → '+name:''));
+  toast('✅ Update થઈ ગયું!');
+  closeEdit();
 };
 
 // ====== SORT / FILTER ======
@@ -553,7 +685,9 @@ window.installApp = function(){
 
 // ====== SERVICE WORKER ======
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  navigator.serviceWorker.register('./sw.js')
+    .then(r => console.log('SW registered'))
+    .catch(e => console.log('SW skip:', e));
 }
 
 // ====== INIT ======
