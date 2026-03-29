@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="gu">
 <head>
@@ -196,10 +195,26 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
   <div id="activityList"></div>
 </div>
 
+<!-- 3. CALL QUEUE VIEW -->
+<div id="view2" class="view">
+  <div style="padding:12px 16px 4px;display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <div style="font-size:13px;font-weight:800;color:#ff4757">📵 Call Queue</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px">Call cut કરો → automatic next!</div>
+    </div>
+    <div style="display:flex;gap:6px">
+      <button onclick="window.stopAutoCall()" style="background:var(--s3);border:1px solid var(--border);color:var(--muted);padding:8px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer">⏹ Stop</button>
+      <button id="startCallBtn" onclick="window.startAutoCall()" style="background:#ff4757;border:none;color:#fff;padding:10px 16px;border-radius:20px;font-size:12px;font-weight:800;cursor:pointer">▶ Start</button>
+    </div>
+  </div>
+  <div id="callQueueList" style="padding:8px 10px 100px"></div>
+</div>
+
 <!-- BOTTOM NAV -->
 <div class="bottom-nav">
   <div class="bnav active" id="nav0" onclick="switchView(0)"><span>📋</span><p>ઉધાર List</p></div>
   <div class="bnav" id="nav1" onclick="switchView(1)"><span>🕐</span><p>Activity</p></div>
+  <div class="bnav" id="nav2" onclick="switchView(2)"><span>📵</span><p>Call Queue</p></div>
 </div>
 
 </div><!-- /mainApp -->
@@ -239,12 +254,16 @@ MO. 8160323142</textarea>
     <div class="sheet-head"><h3 id="paidName">✅ ચૂકતે કરો</h3><p id="paidSub"></p></div>
     <div style="height:12px"></div>
     <div class="form-group">
-      <label>કેટલા ₹ મળ્યા? (ખાલી છોડો = પૂરા)</label>
+      <label>કેટલા ₹ મળ્યા? (ખાલી = પૂરા)</label>
       <input type="number" id="paidAmt" placeholder="0 = પૂરા paid" inputmode="numeric">
     </div>
     <div class="form-group">
       <label>નોંધ</label>
       <input type="text" id="paidNote" placeholder="Cash/UPI/...">
+    </div>
+    <div class="form-group">
+      <label>📅 Next Follow-up Date (વાયદો)</label>
+      <input type="date" id="paidFollowup">
     </div>
     <div class="sheet-btns">
       <button class="sbtn sbtn-cancel" onclick="closePaid()">✕</button>
@@ -306,11 +325,29 @@ MO. 8160323142</textarea>
     </div>
     <div class="form-group"><label>Model/Product</label><input id="eM" placeholder="Model..."></div>
     <div class="form-group"><label>ખરીદ તારીખ (DD.MM.YYYY)</label><input id="eD" placeholder="DD.MM.YYYY"></div>
+    <div class="form-group"><label>📅 Next Follow-up Date</label><input type="date" id="eFollowup"></div>
     <div class="sheet-btns">
       <button class="sbtn sbtn-cancel" onclick="closeEdit()">✕</button>
       <button class="sbtn" style="background:var(--blue);color:#fff" onclick="saveEdit()">✅ Save</button>
     </div>
     <div style="height:20px"></div>
+  </div>
+</div>
+
+<!-- NEXT CALL POPUP -->
+<div class="overlay" id="nextCallOvr" style="align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--s1);border:1px solid var(--border);border-radius:20px;width:100%;max-width:340px;padding:24px;text-align:center">
+    <div style="font-size:48px;margin-bottom:12px">📞</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:6px">NEXT CALL</div>
+    <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:4px" id="nextCallName"></div>
+    <div style="font-size:13px;color:var(--accent);font-weight:700;margin-bottom:4px" id="nextCallMob"></div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:20px" id="nextCallInfo"></div>
+    <div style="display:flex;gap:8px">
+      <button onclick="window.skipNextCall()" style="flex:1;padding:13px;border-radius:10px;border:1px solid var(--border);background:var(--s3);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer">⏭ Skip</button>
+      <button onclick="window.stopAutoCall()" style="flex:1;padding:13px;border-radius:10px;border:none;background:var(--s3);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer">⏹ Stop</button>
+      <button onclick="window.confirmNextCall()" style="flex:2;padding:13px;border-radius:10px;border:none;background:#ff4757;color:#fff;font-size:14px;font-weight:800;cursor:pointer">📞 Call કરો</button>
+    </div>
+    <div style="margin-top:10px;font-size:10px;color:var(--muted)" id="nextCallCount"></div>
   </div>
 </div>
 
@@ -457,12 +494,20 @@ window.renderList = function(){
     <div class="card ${days>=365?'urgent':days>=90?'warn':''}">
       <div class="card-top">
         <div class="card-row1"><div class="c-name">${c.name}</div><div class="c-amount">${fmtAmt(c.baki)}</div></div>
-        <div class="c-meta">${dBadge(days)}${mBadge(c.mark)}<span class="badge bx">${c.type}</span>${c.dept?`<span class="badge" style="background:rgba(26,140,255,.15);color:var(--blue);border:1px solid rgba(26,140,255,.3)">${c.dept}</span>`:''}<span class="badge bx">📍${c.adrs}</span></div>
-        <div class="c-model">📦 ${c.model} · 📅 ${c.date} · 📞 ${c.mob}</div>
+        <div class="c-meta">
+          ${dBadge(days)}
+          ${c.dept?`<span class="badge" style="background:rgba(26,140,255,.15);color:var(--blue);border:1px solid rgba(26,140,255,.3)">${c.dept==='LG'?'📺':c.dept==='HERO'?'🏍️':'🔧'} ${c.dept}</span>`:''}
+          <span class="badge bx">📍 ${c.adrs}</span>
+          ${c.date?`<span class="badge bx">🗓️ ${c.date}</span>`:''}
+          ${c.followup?`<span class="badge" style="background:rgba(46,213,115,.15);color:var(--green);border:1px solid rgba(46,213,115,.3)">📅 ${c.followup}</span>`:''}
+          ${c.notPicked?`<span class="badge" style="background:rgba(255,71,87,.15);color:#ff4757;border:1px solid rgba(255,71,87,.3)">📵 ન ઉઠાવ્યો</span>`:''}
+        </div>
+        <div class="c-model">📞 ${c.mob} · 📦 ${c.model}</div>
       </div>
       <div class="card-actions">
         <button class="act-btn act-wa" onclick="window.openWA('${c.id}')">💬 <span>WhatsApp</span></button>
         <button class="act-btn act-call" onclick="window.doCall('${c.mob}')">📞 <span>Call</span></button>
+        <button class="act-btn" style="color:#ff4757" onclick="window.markNotPicked('${c.id}')">${c.notPicked?'✅ <span>ઉઠાવ્યો</span>':'📵 <span>ન ઉઠાવ્યો</span>'}</button>
         <button class="act-btn" style="color:var(--blue)" onclick="window.openEdit('${c.id}')">✏️ <span>Edit</span></button>
         <button class="act-btn act-done" onclick="window.openPaid('${c.id}')">✅ <span>ચૂક્યો</span></button>
       </div>
@@ -531,6 +576,7 @@ window.openPaid = function(id){
   document.getElementById('paidSub').textContent = 'બાકી: '+fmtAmt(curCust.baki);
   document.getElementById('paidAmt').value = '';
   document.getElementById('paidNote').value = '';
+  document.getElementById('paidFollowup').value = '';
   document.getElementById('paidOvr').classList.add('show');
   document.body.style.overflow='hidden';
 };
@@ -539,16 +585,31 @@ window.confirmPaid = async function(){
   if(!curCust) return;
   const paid = parseFloat(document.getElementById('paidAmt').value)||0;
   const note = document.getElementById('paidNote').value.trim();
+  const followupRaw = document.getElementById('paidFollowup').value;
   const newBaki = paid > 0 ? Math.max(0, curCust.baki - paid) : 0;
+
+  // Format followup date as DD.MM.YYYY
+  let followup = '';
+  if(followupRaw){
+    const d = new Date(followupRaw);
+    followup = d.toLocaleDateString('en-GB').replace(/\//g,'.');
+  }
+
   setSyncStatus('syncing');
   if(newBaki <= 0){
-    await update(ref(db,'customers/'+curCust.id),{paid:true, baki:0});
+    await update(ref(db,'customers/'+curCust.id),{
+      paid:true, baki:0,
+      followup: followup||''
+    });
     logActivity('✅',curCust.name+' — ₹'+curCust.baki.toLocaleString('en-IN')+' પૂરા ચૂક્ત્યા'+(note?' ('+note+')':''));
     toast('✅ Fully Paid! 🎉');
   } else {
-    await update(ref(db,'customers/'+curCust.id),{baki: newBaki});
-    logActivity('💸',curCust.name+' — ₹'+paid.toLocaleString('en-IN')+' મળ્યા, બાકી ₹'+newBaki.toLocaleString('en-IN')+(note?' ('+note+')':''));
-    toast('💸 ₹'+paid.toLocaleString('en-IN')+' ચૂક્ત્યા!');
+    await update(ref(db,'customers/'+curCust.id),{
+      baki: newBaki,
+      followup: followup||curCust.followup||''
+    });
+    logActivity('💸',curCust.name+' — ₹'+paid.toLocaleString('en-IN')+' મળ્યા, બાકી ₹'+newBaki.toLocaleString('en-IN')+(followup?' | Next: '+followup:'')+(note?' ('+note+')':''));
+    toast('💸 ₹'+paid.toLocaleString('en-IN')+' ચૂક્ત્યા!'+(followup?' Next: '+followup:''));
   }
   closePaid();
 };
@@ -604,6 +665,15 @@ window.openEdit = function(id){
   document.getElementById('eA').value = curCust.adrs||'';
   document.getElementById('eM').value = curCust.model||'';
   document.getElementById('eD').value = curCust.date||'';
+  // Convert DD.MM.YYYY to YYYY-MM-DD for date input
+  if(curCust.followup){
+    try{
+      const p = curCust.followup.split('.');
+      if(p.length===3) document.getElementById('eFollowup').value = `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+    }catch{ document.getElementById('eFollowup').value=''; }
+  } else {
+    document.getElementById('eFollowup').value='';
+  }
   document.getElementById('editOvr').classList.add('show');
   document.body.style.overflow='hidden';
 };
@@ -617,6 +687,12 @@ window.saveEdit = async function(){
   const adrs = (document.getElementById('eA').value.trim()||'').toUpperCase();
   const model = document.getElementById('eM').value.trim().toUpperCase();
   const dateRaw = document.getElementById('eD').value.trim();
+  const followupRaw = document.getElementById('eFollowup').value;
+  let followup = curCust.followup||'';
+  if(followupRaw){
+    const d = new Date(followupRaw);
+    followup = d.toLocaleDateString('en-GB').replace(/\//g,'.');
+  }
 
   // Recalculate days from date
   let days = curCust.days||0;
@@ -638,11 +714,164 @@ window.saveEdit = async function(){
     baki, adrs, model,
     date: dateRaw||curCust.date,
     dept: dept||curCust.dept||'',
+    followup,
     days
   });
   logActivity('✏️','Edit: '+curCust.name+(name!==curCust.name?' → '+name:''));
   toast('✅ Update થઈ ગયું!');
   closeEdit();
+};
+
+// ====== NOT PICKED ======
+window.markNotPicked = async function(id){
+  const c = custs[id]; if(!c) return;
+  const newVal = !c.notPicked;
+  setSyncStatus('syncing');
+  await update(ref(db,'customers/'+id),{notPicked: newVal});
+  logActivity(newVal?'📵':'📞', c.name+(newVal?' — ફોન ન ઉઠાવ્યો':' — ફોન ઉઠાવ્યો'));
+  toast(newVal?'📵 Call Queue માં ઉમેર્યો':'✅ Queue માંથી હટાવ્યો');
+};
+
+// ====== CALL QUEUE RENDER ======
+function renderCallQueue(){
+  const list = Object.values(custs).filter(c=>!c.paid && c.notPicked);
+  const el = document.getElementById('callQueueList');
+  if(!list.length){
+    el.innerHTML='<div class="empty"><div style="font-size:48px">📭</div><p>Call Queue ખાલી છે!<br>Cards પર 📵 button tap કરો</p></div>';
+    document.getElementById('startCallBtn').style.display='none';
+    return;
+  }
+  document.getElementById('startCallBtn').style.display='block';
+  document.getElementById('startCallBtn').textContent='▶ Start Calling ('+list.length+')';
+
+  el.innerHTML = list.map((c,i)=>`
+    <div class="card urgent" id="qcard-${c.id}">
+      <div class="card-top">
+        <div class="card-row1">
+          <div>
+            <div class="c-name">${i+1}. ${c.name}</div>
+            <div class="c-model" style="margin-top:4px">📞 ${c.mob} · 📦 ${c.model}</div>
+            <div class="c-model">📍 ${c.adrs} · ${fmtAmt(c.baki)}</div>
+          </div>
+        </div>
+      </div>
+      <div class="card-actions">
+        <button class="act-btn act-call" onclick="window.callAndNext('${c.id}','${c.mob}')">📞 <span>Call કરો</span></button>
+        <button class="act-btn act-wa" onclick="window.openWA('${c.id}')">💬 <span>WhatsApp</span></button>
+        <button class="act-btn" style="color:var(--green)" onclick="window.markNotPicked('${c.id}')">✅ <span>ઉઠાવ્યો</span></button>
+      </div>
+    </div>`).join('');
+}
+
+// ====== AUTO CALL ======
+let callQueueIndex = 0;
+let autoCallActive = false;
+let autoCallList = [];
+
+window.startAutoCall = function(){
+  autoCallList = Object.values(custs).filter(c=>!c.paid && c.notPicked);
+  if(!autoCallList.length){toast('📭 Queue ખાલી!','#ff4757');return;}
+  callQueueIndex = 0;
+  autoCallActive = true;
+  dialCurrent();
+};
+
+function dialCurrent(){
+  if(!autoCallActive) return;
+  if(callQueueIndex >= autoCallList.length){
+    toast('✅ બધાને call થઈ ગયા!');
+    autoCallActive = false;
+    callQueueIndex = 0;
+    renderCallQueue();
+    return;
+  }
+  const c = autoCallList[callQueueIndex];
+
+  // Highlight current card
+  document.querySelectorAll('[id^="qcard-"]').forEach(el=>{
+    el.style.borderColor='';el.style.borderWidth='';
+  });
+  const cur = document.getElementById('qcard-'+c.id);
+  if(cur){
+    cur.style.borderColor='var(--accent)';
+    cur.style.borderWidth='3px';
+    cur.scrollIntoView({behavior:'smooth',block:'center'});
+  }
+
+  // Dial immediately
+  let mob = c.mob.replace(/\D/g,'');
+  if(mob.length===10) mob='91'+mob;
+  logActivity('📞', c.name+' — Auto call');
+  window.location.href='tel:+'+mob;
+}
+
+// When user returns after call → show next call popup
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible' && autoCallActive){
+    setTimeout(()=>{
+      callQueueIndex++;
+      if(callQueueIndex >= autoCallList.length){
+        toast('✅ બધાને call થઈ ગયા!');
+        autoCallActive = false;
+        callQueueIndex = 0;
+        renderCallQueue();
+        return;
+      }
+      showNextCallPopup();
+    }, 800);
+  }
+});
+
+function showNextCallPopup(){
+  const c = autoCallList[callQueueIndex];
+  if(!c) return;
+  document.getElementById('nextCallName').textContent = c.name;
+  document.getElementById('nextCallMob').textContent = c.mob;
+  document.getElementById('nextCallInfo').textContent = '📍 '+c.adrs+' · '+fmtAmt(c.baki);
+  document.getElementById('nextCallCount').textContent = (callQueueIndex+1)+' / '+autoCallList.length+' — Call cut કર્યા પછી next આવશે';
+  document.getElementById('nextCallOvr').classList.add('show');
+  document.body.style.overflow='hidden';
+}
+
+window.confirmNextCall = function(){
+  document.getElementById('nextCallOvr').classList.remove('show');
+  document.body.style.overflow='';
+  dialCurrent();
+};
+
+window.skipNextCall = function(){
+  document.getElementById('nextCallOvr').classList.remove('show');
+  document.body.style.overflow='';
+  callQueueIndex++;
+  if(callQueueIndex >= autoCallList.length){
+    toast('✅ બધા skip/complete!');
+    autoCallActive=false;
+    callQueueIndex=0;
+    renderCallQueue();
+    return;
+  }
+  showNextCallPopup();
+};
+
+window.stopAutoCall = function(){
+  autoCallActive = false;
+  callQueueIndex = 0;
+  document.getElementById('nextCallOvr').classList.remove('show');
+  document.body.style.overflow='';
+  renderCallQueue();
+  toast('⏹ Auto Call બંધ!');
+};
+
+window.callAndNext = function(id, mob){
+  autoCallList = Object.values(custs).filter(c=>!c.paid && c.notPicked);
+  const idx = autoCallList.findIndex(x=>x.id===id);
+  callQueueIndex = idx>=0?idx:0;
+  autoCallActive = true;
+  const c = autoCallList[callQueueIndex];
+  logActivity('📞', c?.name+' — Manual call');
+  let m = mob.replace(/\D/g,'');
+  if(m.length===10) m='91'+m;
+  window.location.href='tel:+'+m;
 };
 
 // ====== SORT / FILTER ======
@@ -653,6 +882,7 @@ window.setFil = function(f){fil=f;renderList();renderTabs();};
 window.switchView = function(n){
   document.querySelectorAll('.view').forEach((v,i)=>v.classList.toggle('active',i===n));
   document.querySelectorAll('.bnav').forEach((b,i)=>b.classList.toggle('active',i===n));
+  if(n===2) renderCallQueue();
 };
 
 // ====== TOAST ======
